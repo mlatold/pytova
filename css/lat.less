@@ -1,0 +1,75 @@
+/* Color definitions (1=dark, 4=light) */
+// blues
+@c1-1: #4d6571;
+@c1-2: #668796;
+@c1-3: #8da5b1;
+@c1-4: #b2c3cb;
+
+// oranges
+@c2-1: #a88251;
+@c2-2: #e1ae6d;
+@c2-3: #e8c291;
+@c2-4: #f1d6b9;
+
+// blacks
+@c3-1: #28282a;
+@c3-2: #353537;
+@c3-3: #68686a;
+@c3-4: #9a9a9c;
+
+// defaults
+@w: #ffffff;
+@b: #000000;
+@shadow: #dddddd;
+@error: #d20000;
+@success: #32cd32;
+@warning: #c8cc45;
+
+@font: "Helvetica Neue", Helvetica, Arial, sans-serif;
+@font-size: 14px;
+
+@site-width-highres: 86%;
+@site-width-desktop: 92%;
+@site-width-tablet: 95%;
+@site-width-phone: 98%;
+
+@desktop: 1400px;
+@tablet: 800px;
+@mobile: 500px;
+
+@highres_minimum: @desktop + 1px;
+@desktop_minimum: @tablet + 1px;
+@tablet_minimum: @mobile + 1px;
+
+@background: #f0f0f1;
+
+/* Functions */
+.gradient (@c1, @c2, @s1:0, @s2:100) {
+	background-image: -moz-linear-gradient(top, @c1 ~"@{s1}%", @c2 ~"@{s2}%");
+	background-image: -ms-linear-gradient(top, @c1 ~"@{s1}%", @c2 ~"@{s2}%");
+	background-image: -webkit-gradient(linear, 0 0, 0 100, color-stop(~"@{s1}%", @c1), color-stop(@s2, ~"@{s2}%"));
+	background-image: -webkit-linear-gradient(top, @c1 ~"@{s1}%", @c2 ~"@{s2}%");
+	background-image: -o-linear-gradient(top, @c1 ~"@{s1}%", @c2 ~"@{s2}%");
+	background-image: linear-gradient(top, @c1 ~"@{s1}%", @c2 ~"@{s2}%");
+}
+
+.border-radius (@size: 5px) {
+	-webkit-border-radius: @size;
+	-moz-border-radius: @size;
+	border-radius: @size;
+}
+
+.box-shadow(@h-shadow, @v-shadow, @blur:10px, @spread:5px, @color:@shadow, @type:0) {
+	-moz-box-shadow: @h-shadow @v-shadow @blur @spread @color ~`'@{type}' != '0' ? '@{type}' : ''`; /* Firefox */
+	-webkit-box-shadow: @h-shadow @v-shadow @blur @spread @color ~`'@{type}' != '0' ? '@{type}' : ''`; /* Safari, Chrome */
+	box-shadow: @h-shadow @v-shadow @blur @spread @color ~`'@{type}' != '0' ? '@{type}' : ''`; /* CSS3 */
+}
+
+/* Imports */
+@import url('http://fonts.googleapis.com/css?family=Economica:400,700');
+@import url(http://fonts.googleapis.com/css?family=Share+Tech);
+
+@import url('reset.less');
+@import url('base.less');
+@import url('header.less');
+@import url('content.less');
