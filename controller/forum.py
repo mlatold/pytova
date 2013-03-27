@@ -1,6 +1,7 @@
 from model.forum import Forum
+from db.query import Query
 
-class ForumController:
-	@staticmethod
-	def index(session):
-		return 'hello world'
+hey = Query('yo')
+
+def index(Session):
+	return 'hello world'

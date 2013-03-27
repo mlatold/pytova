@@ -1,5 +1,8 @@
 #!/usr/bin/env python3.2
+VERSION = 'pre-alpha'
+
 import sys
+import inspect
 
 # Tornado Modules
 import tornado.ioloop
@@ -8,8 +11,8 @@ import tornado.websocket
 
 # Pytova Modules
 from controller import *
-from model import session
-import inspect
+from model.session import Session
+from library import config
 
 sessions = {}
 
@@ -20,30 +23,26 @@ class WebHandler(tornado.web.RequestHandler):
 
 		# Check to see if our session exists
 		if self.request.remote_ip not in sessions:
-			sessions[self.request.remote_ip] = session.Session()
+			sessions[self.request.remote_ip] = Session()
 
 		sessions[self.request.remote_ip].request = self.request
 		uriclass = sessions[self.request.remote_ip].uri[1]
 		urifunc = sessions[self.request.remote_ip].uri[2]
 
-		# Check if the controller exists
-		if 'controller.' + uriclass in sys.modules:
-			loadclass = getattr(sys.modules['controller.' + uriclass], uriclass.title() + 'Controller')
+		# Check if the controller and method exists
+		if 'controller.' + uriclass in sys.modules and hasattr(sys.modules['controller.' + uriclass], urifunc):
+			loadfunc = getattr(sys.modules['controller.' + uriclass], urifunc)
+			inspectfunc = inspect.getfullargspec(loadfunc)
 
-			# Check if the method exists
-			if(hasattr(loadclass, urifunc)):
-				loadfunc = getattr(loadclass, urifunc)
-				inspectfunc = inspect.getfullargspec(loadfunc)
+			# Too many arguments, we have to splice
+			if len(inspectfunc.args) < len(sessions[self.request.remote_ip].uri) - 1 and inspectfunc.varargs == None:
+				output = loadfunc(sessions[self.request.remote_ip], *sessions[self.request.remote_ip].uri[2:len(inspectfunc.args) - 1])
+			# Call the controller normally
+			else:
+				output = loadfunc(sessions[self.request.remote_ip], *sessions[self.request.remote_ip].uri[2:])
 
-				# Too many arguments, we have to splice
-				if len(inspectfunc.args) < len(sessions[self.request.remote_ip].uri) - 1 and inspectfunc.varargs == None:
-					output = loadfunc(sessions[self.request.remote_ip], *sessions[self.request.remote_ip].uri[2:len(inspectfunc.args) - 1])
-				# Call the controller normally
-				else:
-					output = loadfunc(sessions[self.request.remote_ip], *sessions[self.request.remote_ip].uri[2:])
-
-				self.write(output)
-				return
+			self.write(output)
+			return
 
 		# Did not return, must be 404
 		self.write('404')
@@ -52,7 +51,7 @@ webserver = tornado.web.Application([
 	(r'/css/([A-Za-z0-9_\.]*)', tornado.web.StaticFileHandler, {'path': './css/'}),
 	(r'/js/([A-Za-z0-9_\.]*)', tornado.web.StaticFileHandler, {'path': './js/'}),
 	(r"/.*", WebHandler),
-], debug=True)
+], debug=config.ini.get('advanced', 'debug'))
 
 ''' WebSockets Server '''
 class SocketHandler(tornado.websocket.WebSocketHandler):
@@ -67,7 +66,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 
 socketserver = tornado.web.Application([
 	(r'/', SocketHandler),
-], debug=True)
+], debug=config.ini.get('advanced', 'debug'))
 
 ''' Initalize the Server '''
 if __name__ == "__main__":
