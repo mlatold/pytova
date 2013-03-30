@@ -1,7 +1,7 @@
 from model.forum import Forum
 from db.query import Query
 
-hey = Query('yo')
+#hey = Query('configuration', select='*')
 
 def index(Session):
-	return 'hello world'
+	return repr(Query('configuration', select='*', join='left join session on session_id="test1"').get())#.get()

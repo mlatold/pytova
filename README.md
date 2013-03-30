@@ -8,5 +8,5 @@ Open source forum software written in Python
  *   Optimization. I am utilizing all the technologies I can and making some sacrifices for the sake of making sure bandwidth isn't wasted on phones with data. Pages will always load within a fraction of a second making things better for high load servers, and pages are written to minimize overhead. Things like uploaded avatars will automatically be converted to small jpg files, and things like forum images may not show by default. This is to take into account people on data plans. There will be very little images loaded from other sources, its either pure CSS or embeded base64 encoded images.
  *   Free and open source. I have the GPL 3.0 Licence for this project. You are more than welcome to download the source and do whatever you want with it.
 
-#### Requirementsg
+#### Requirements
 Pytova uses [Tornado 2.4.1](http://www.tornadoweb.org) as a server.

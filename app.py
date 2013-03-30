@@ -1,6 +1,5 @@
 #!/usr/bin/env python3.2
 VERSION = 'pre-alpha'
-
 import sys
 import inspect
 
@@ -31,15 +30,9 @@ class WebHandler(tornado.web.RequestHandler):
 
 		# Check if the controller and method exists
 		if 'controller.' + uriclass in sys.modules and hasattr(sys.modules['controller.' + uriclass], urifunc):
-			loadfunc = getattr(sys.modules['controller.' + uriclass], urifunc)
-			inspectfunc = inspect.getfullargspec(loadfunc)
-
-			# Too many arguments, we have to splice
-			if len(inspectfunc.args) < len(sessions[self.request.remote_ip].uri) - 1 and inspectfunc.varargs == None:
-				output = loadfunc(sessions[self.request.remote_ip], *sessions[self.request.remote_ip].uri[2:len(inspectfunc.args) - 1])
-			# Call the controller normally
-			else:
-				output = loadfunc(sessions[self.request.remote_ip], *sessions[self.request.remote_ip].uri[2:])
+			loadmethod = getattr(sys.modules['controller.' + uriclass], urifunc)
+			inspectfunc = inspect.getfullargspec(loadmethod)
+			output = loadmethod(sessions[self.request.remote_ip], *sessions[self.request.remote_ip].uri[2:len(inspectfunc.args) - 1])
 
 			self.write(output)
 			return
@@ -68,7 +61,7 @@ socketserver = tornado.web.Application([
 	(r'/', SocketHandler),
 ], debug=config.ini.get('advanced', 'debug'))
 
-''' Initalize the Server '''
+''' Initalize Server '''
 if __name__ == "__main__":
 	webserver.listen(80)
 	socketserver.listen(9876)
