@@ -23,6 +23,9 @@ class Builder:
 	@staticmethod
 	def table(tablelist):
 		result = ''
+		if not isinstance(tablelist, list):
+			tablelist = [tablelist]
+
 		for table in tablelist:
 			join = table[:10].lower()
 			if join == 'left join ':
@@ -54,7 +57,6 @@ class Builder:
 		query = ''
 		querytype = ''
 
-		query += Builder.table(sql['join'])
 		'''
 				if 'join' in sql:  # JOIN
 					for join, table, on in sql['join']:
@@ -86,7 +88,8 @@ class Builder:
 		'''
 
 		if 'select' in sql:
-			query = 'SELECT ' + sql['select'] + ' FROM' + query
+			query = 'SELECT ' + sql['select'] + ' FROM' + Builder.table(sql['join'])
+			
 		'''
 				query = {
 					'select': 'SELECT'

@@ -2,6 +2,7 @@
 VERSION = 'pre-alpha'
 import sys
 import inspect
+import os
 
 # Tornado Modules
 import tornado.ioloop
@@ -49,13 +50,13 @@ webserver = tornado.web.Application([
 ''' WebSockets Server '''
 class SocketHandler(tornado.websocket.WebSocketHandler):
 	def open(self):
-		print ('newconnection')
+		print('newconnection')
 
 	def on_message(self, message):
-		print ('message: %s' % message)
+		print('message: %s' % message)
 
 	def on_close(self):
-		print ('closed')
+		print('closed')
 
 socketserver = tornado.web.Application([
 	(r'/', SocketHandler),

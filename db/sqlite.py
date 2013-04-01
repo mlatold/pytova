@@ -51,9 +51,9 @@ class Driver(Builder):
 		if self.obj == None:
 			driver = self.connect()
 			csr = driver.cursor()
-			print(self.query)
+			#print(self.query, 'test')
 			#start_time = time.time()
-			#csr.execute(self.query, self.data)
+			csr.execute(self.query, self.data)
 			self.obj = csr
 			driver.commit()
 		self.close(doclose)
