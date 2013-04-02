@@ -9,4 +9,4 @@ Open source forum software written in Python
  *   Free and open source. I have the GPL 3.0 Licence for this project. You are more than welcome to download the source and do whatever you want with it.
 
 #### Requirements
-Pytova uses [Tornado 2.4.1](http://www.tornadoweb.org) as a server.
+Pytova uses [Tornado 3.0.0](http://www.tornadoweb.org) as a server.

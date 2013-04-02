@@ -2,6 +2,7 @@
 VERSION = 'pre-alpha'
 import sys
 import inspect
+import datetime
 import os
 
 # Tornado Modules
@@ -25,7 +26,11 @@ class WebHandler(tornado.web.RequestHandler):
 		if self.request.remote_ip not in sessions:
 			sessions[self.request.remote_ip] = Session()
 
-		sessions[self.request.remote_ip].request = self.request
+		self.set_header("Expires", "Sat, 1 Jan 2000 01:00:00 GMT")
+		self.set_header("Server", "Pytova/Tornado")
+		self.set_header("Cache-control", "no-cache, must-revalidate")
+
+		sessions[self.request.remote_ip].web = self
 		uriclass = sessions[self.request.remote_ip].uri[1]
 		urifunc = sessions[self.request.remote_ip].uri[2]
 
@@ -36,10 +41,9 @@ class WebHandler(tornado.web.RequestHandler):
 			output = loadmethod(sessions[self.request.remote_ip], *sessions[self.request.remote_ip].uri[2:len(inspectfunc.args) - 1])
 
 			self.write(output)
-			return
-
 		# Did not return, must be 404
-		self.write('404')
+		else:
+			self.write('404')
 
 webserver = tornado.web.Application([
 	(r'/css/([A-Za-z0-9_\.]*)', tornado.web.StaticFileHandler, {'path': './css/'}),
@@ -64,6 +68,6 @@ socketserver = tornado.web.Application([
 
 ''' Initalize Server '''
 if __name__ == "__main__":
-	webserver.listen(80)
-	socketserver.listen(9876)
+	webserver.listen(config.ini.get('port', 'http'))
+	socketserver.listen(config.ini.get('port', 'socket'))
 	tornado.ioloop.IOLoop.instance().start()

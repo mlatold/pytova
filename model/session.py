@@ -1,12 +1,13 @@
 import re
 
 class Session:
-	request = None
+	web = None
 	uri = []
 
 	def __setattr__(self, name, value):
-		if name == 'request':
-			self.uri = str(value.uri).split('/')
+		if name == 'web':
+			print(value.request.uri)
+			self.uri = str(value.request.uri).split('/')
 
 			# Accessing default url, go to default page
 			if len(self.uri) <= 1:

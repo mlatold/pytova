@@ -3,4 +3,4 @@ from db.query import Query
 from library import cache, load
 
 def index(Session):
-	return repr(Session.request)
+	return repr(Session.web.request)
