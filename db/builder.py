@@ -1,10 +1,9 @@
-from library import config
+from db.query import ini
 import re
 
 
 class Builder:
-
-	prefix = config.ini.get('database', 'prefix')
+	prefix = ini.get('database', 'prefix')
 	tablere = re.compile(r'((left|right|inner) join )?(.+)', re.I)
 
 	'''

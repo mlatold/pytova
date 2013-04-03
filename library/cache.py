@@ -4,8 +4,15 @@ queries = {}
 '''
 	Adds a cache
 '''
-def add(name, *args, **dicts):
+def add(*args, **dicts):
 	global queries
+
+	# Handles raw queries (first key is cache name)
+	name = args[0]
+	if len(dicts) <= 0:
+		del args[0]
+
+	# Create cache entry
 	queries[name] = { 'args': args, 'dicts': dicts, 'data': {} }
 	reload(name)
 
@@ -14,6 +21,7 @@ def add(name, *args, **dicts):
 '''
 def get(name, var):
 	global queries
+
 	if var in queries[name]['data']:
 		return queries[name]['data'][var]
 	else:
@@ -24,6 +32,7 @@ def get(name, var):
 '''
 def reload(name=''):
 	global queries
+
 	# No argument is defined, reload the entire cache
 	if name == '':
 		for cachename in queries:
@@ -31,6 +40,7 @@ def reload(name=''):
 			return
 	queries[name]['data'] = {}
 	result = Query(*queries[name]['args'], **queries[name]['dicts']).get()
+	
 	if len(result):
 		# Key value relationship
 		if len(result[0]) == 2:
@@ -43,5 +53,3 @@ def reload(name=''):
 				queries[name]['key'] = list(result[0])[-1]
 			for r in result:
 				queries[name]['data'][r[queries[name]['key']]] = r
-
-add('configuration', 'configuration', select='name, value')

@@ -1,5 +1,5 @@
 from db.builder import Builder
-from library import config
+from db.query import ini
 import sqlite3
 import re
 connection = None
@@ -39,7 +39,7 @@ class Driver(Builder):
 	def connect():
 		global connection
 		if connection == None:
-			connection = sqlite3.connect(config.ini.get('database', 'file'))
+			connection = sqlite3.connect(ini.get('database', 'file'))
 			connection.row_factory = Driver.dict_factory
 			connection.text_factory = str
 		return connection

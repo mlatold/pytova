@@ -2,8 +2,8 @@
 VERSION = 'pre-alpha'
 import sys
 import inspect
-import datetime
 import os
+from datetime import date
 
 # Tornado Modules
 import tornado.ioloop
@@ -13,7 +13,8 @@ import tornado.websocket
 # Pytova Modules
 from controller import *
 from model.session import Session
-from library import config
+from library import load
+from db.query import ini
 
 sessions = {}
 
@@ -39,17 +40,17 @@ class WebHandler(tornado.web.RequestHandler):
 			loadmethod = getattr(sys.modules['controller.' + uriclass], urifunc)
 			inspectfunc = inspect.getfullargspec(loadmethod)
 			output = loadmethod(sessions[self.request.remote_ip], *sessions[self.request.remote_ip].uri[2:len(inspectfunc.args) - 1])
-
-			self.write(output)
 		# Did not return, must be 404
 		else:
-			self.write('404')
+			output = '404'
+
+		self.write(load.view('wrapper', content=output, year=date.today().year))
 
 webserver = tornado.web.Application([
 	(r'/css/([A-Za-z0-9_\.]*)', tornado.web.StaticFileHandler, {'path': './css/'}),
 	(r'/js/([A-Za-z0-9_\.]*)', tornado.web.StaticFileHandler, {'path': './js/'}),
 	(r"/.*", WebHandler),
-], debug=config.ini.get('advanced', 'debug'))
+], debug=ini.get('advanced', 'debug'))
 
 ''' WebSockets Server '''
 class SocketHandler(tornado.websocket.WebSocketHandler):
@@ -64,10 +65,10 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 
 socketserver = tornado.web.Application([
 	(r'/', SocketHandler),
-], debug=config.ini.get('advanced', 'debug'))
+], debug=ini.get('advanced', 'debug'))
 
 ''' Initalize Server '''
 if __name__ == "__main__":
-	webserver.listen(config.ini.get('port', 'http'))
-	socketserver.listen(config.ini.get('port', 'socket'))
+	webserver.listen(ini.get('port', 'http'))
+	socketserver.listen(ini.get('port', 'socket'))
 	tornado.ioloop.IOLoop.instance().start()

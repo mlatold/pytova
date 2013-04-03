@@ -1,15 +1,30 @@
 LANGUAGE = 'en'
-import imp
 import os
+import imp
+import html
 import tornado.template
+from library import cache
+from db.query import ini as rawini
 
-loader = tornado.template.Loader(os.path.join(os.path.dirname(__file__), "../view"))
+# Language Loader
+loader = tornado.template.Loader(os.path.join(os.path.dirname(__file__), "../view"), autoescape=None)
 f, fn, des = imp.find_module(LANGUAGE, ['language'])
 lng = imp.load_module(LANGUAGE, f, fn, des);
 
+cache.add('configuration', select='name, value')
+
+def ini(section, option):
+	return rawini.get(section, option)
+
+def config(var):
+	return cache.get('configuration', var)
+
 def view(file, **args):
 	global loader
-	return loader.load(file + ".html").generate(word=word, **args)
+	# For some reason Tornado doesn't reload templates while in debug mode, so I do it manually here
+	if ini('advanced', 'debug'):
+		loader.reset()
+	return loader.load(file + ".html").generate(config=config, word=word, escape=html.escape, **args)
 
 def word(word, scope='_global', **args):
 	global lng
@@ -20,5 +35,3 @@ def word(word, scope='_global', **args):
 		return '---'
 
 	return lng.words[scope][word].format(**args)
-
-print (view('test'))
