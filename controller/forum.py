@@ -3,4 +3,4 @@ from db.query import Query
 from library import cache, load
 
 def index(Session):
-	return 'this is test content<br />' + repr(Session.web.request)
+	return 'this is content on a page thanks for stopping by!<br /><br />' + repr(Session.web.request)

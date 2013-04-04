@@ -1,5 +1,5 @@
-import importlib
 import configparser
+import importlib
 import sys
 import os
 
@@ -12,3 +12,8 @@ importlib.import_module('db.' + ini.get('database', 'driver'))
 Driver = getattr(sys.modules['db.' + ini.get('database', 'driver')],'Driver')
 
 class Query(Driver): pass
+"""This is just a class that only exists to extend the driver because it
+is interchangeable.
+
+It's designed to be an object that is created for each new database query.
+"""

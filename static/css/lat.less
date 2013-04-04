@@ -65,10 +65,14 @@
 	box-shadow: @h-shadow @v-shadow @blur @spread @color ~`'@{type}' != '0' ? '@{type}' : ''`; /* CSS3 */
 }
 
-/* Imports */
-@import url('http://fonts.googleapis.com/css?family=Economica:400,700');
-@import url(http://fonts.googleapis.com/css?family=Share+Tech);
+.rotate (@d) {
+	-webkit-transform:rotate(@d);
+	-moz-transform:rotate(@d);
+	-o-transform:rotate(@d);
+	-ms-transform:rotate(@d);
+}
 
+/* Imports */
 @import url('reset.less');
 @import url('base.less');
 @import url('header.less');

@@ -5,6 +5,14 @@ import re
 connection = None
 
 class Driver(Builder):
+	"""This is database driver that is isolated and loaded dynamically
+	It takes defined ini variables and connects to our database accordingly.
+
+	This class should only contain methods that are unique to sqlite3.
+	Builder contains a lot of the crossover methods and query builder functions.
+
+	Each database query is considered to be a seperate object in Pytova.
+	"""
 	query = ''
 	args = []
 	dicts = {}
@@ -12,16 +20,13 @@ class Driver(Builder):
 	shutdown = False
 	obj = None
 
-	'''
-		Create instance of Query
-	'''
 	def __init__(self, query='', shutdown=False, *args, **dicts):
-		# Empty Dict means it's a raw query
 		if len(dicts) <= 0:
+			# Empty Dict means it's a raw query
 			self.query = query
 			self.data = args
-		# Use query builder otherwise
 		else:
+			# Use query builder otherwise
 			if 'join' not in dicts:
 				dicts['join'] = []
 			elif not isinstance(dicts['join'], list):
@@ -32,11 +37,9 @@ class Driver(Builder):
 		self.dicts = dicts
 		self.shutdown = shutdown
 
-	'''
-		Connect to a database and return a connection
-	'''
 	@staticmethod
 	def connect():
+		"""Returns an instance of a database connection, creates one if none exists"""
 		global connection
 		if connection == None:
 			connection = sqlite3.connect(ini.get('database', 'file'))
@@ -44,10 +47,8 @@ class Driver(Builder):
 			connection.text_factory = str
 		return connection
 
-	'''
-		Execute a database query
-	'''
 	def execute(self, doclose=True):
+		"""Executes a database query and returns a cursor object"""
 		if self.obj == None:
 			driver = self.connect()
 			csr = driver.cursor()
@@ -59,33 +60,25 @@ class Driver(Builder):
 		self.close(doclose)
 		return self.obj
 
-	'''
-		Get all rows
-	'''
 	def get(self, doclose=True):
+		"""Returns rows as a dict"""
 		result = self.execute(False).fetchall()
 		self.close(doclose)
 		return result
 
-	'''
-		Get one rows
-	'''
 	def row(self, doclose=True):
+		"""Returns only one row"""
 		result = self.execute(False).fetchone()
 		self.close(doclose)
 		return result
 
-	'''
-		Counts number of rows
-	'''
 	def num(self, doclose=True):
+		"""Returns number of rows"""
 		result = self.execute(False).rowcount()
 		self.close(doclose)
 		return result
 
-	'''
-		Close a cursor
-	'''
 	def close(self, doclose=True):
+		"""Closes cursor"""
 		if doclose:
 			self.obj.close()

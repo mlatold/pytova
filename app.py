@@ -1,27 +1,38 @@
 #!/usr/bin/env python3.2
-VERSION = 'pre-alpha'
-import sys
-import inspect
-import os
-from datetime import date
+"""Pytova - A Python Forum Software
+https://github.com/mikelat/pytova
+Created by: Mike Lat
 
-# Tornado Modules
+Licenced under GPL v3
+http://www.gnu.org/licenses/gpl-3.0.txt
+"""
+
+VERSION = 'pre-alpha'
+
+from datetime import date
+import inspect
+import sys
+import os
+
+import tornado.websocket
 import tornado.ioloop
 import tornado.web
-import tornado.websocket
 
-# Pytova Modules
-from controller import *
 from model.session import Session
+from controller import *
 from library import load
 from db.query import ini
 
 sessions = {}
 
-''' HTTP Server '''
 class WebHandler(tornado.web.RequestHandler):
+	"""HTTP Server Handler"""
 	def get(self):
 		global sessions
+
+		# Reload languages if debugging
+		if ini.get('advanced', 'debug'):
+			load.lang()
 
 		# Check to see if our session exists
 		if self.request.remote_ip not in sessions:
@@ -46,14 +57,18 @@ class WebHandler(tornado.web.RequestHandler):
 
 		self.write(load.view('wrapper', content=output, year=date.today().year))
 
+class StaticHandler(tornado.web.StaticFileHandler):
+	"""HTTP Server Static File Handler"""
+	def set_extra_headers(self, path):
+		self.set_header("Server", "Pytova/Tornado")
+
 webserver = tornado.web.Application([
-	(r'/css/([A-Za-z0-9_\.]*)', tornado.web.StaticFileHandler, {'path': './css/'}),
-	(r'/js/([A-Za-z0-9_\.]*)', tornado.web.StaticFileHandler, {'path': './js/'}),
+	(r'/static/([a-zA-Z0-9_\./]*)', StaticHandler, {'path': './static/'}),
 	(r"/.*", WebHandler),
 ], debug=ini.get('advanced', 'debug'))
 
-''' WebSockets Server '''
 class SocketHandler(tornado.websocket.WebSocketHandler):
+	"""Socket Server Handler"""
 	def open(self):
 		print('newconnection')
 
@@ -67,8 +82,8 @@ socketserver = tornado.web.Application([
 	(r'/', SocketHandler),
 ], debug=ini.get('advanced', 'debug'))
 
-''' Initalize Server '''
 if __name__ == "__main__":
+	"""Starting the server"""
 	webserver.listen(ini.get('port', 'http'))
 	socketserver.listen(ini.get('port', 'socket'))
 	tornado.ioloop.IOLoop.instance().start()

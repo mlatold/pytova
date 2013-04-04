@@ -13,4 +13,4 @@ Pytova is a modern take on forum software created by Mike Lat written in Python 
 #### Requirements
 * Python 3.2 or greater
 * Pytova uses [Tornado](http://www.tornadoweb.org) as a server.
-* Modern web browser (IE9 and lower not supported) with Javascript Enabled. Mobile supported.
+* Modern web browser (IE8 and lower not supported) with Javascript Enabled. Mobile supported.

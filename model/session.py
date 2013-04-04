@@ -1,6 +1,11 @@
 import re
 
 class Session:
+	"""This is a session object that contains all the relative information
+	about the visitor accessing the site and any methods assosiated with them.
+
+	It is important to pass it around when trying to get contextual data
+	about the current user accessing the site"""
 	web = None
 	uri = []
 

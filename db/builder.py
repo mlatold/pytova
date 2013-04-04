@@ -1,26 +1,26 @@
 from db.query import ini
 import re
 
-
 class Builder:
+	"""Generic Query Builder
+	
+	Contains methods for building and parsing queries that is flexible between
+	potentially multipule database configurations.
+	"""
 	prefix = ini.get('database', 'prefix')
 	tablere = re.compile(r'((left|right|inner) join )?(.+)', re.I)
 
-	'''
-		Turns query result into dict
-	'''
 	@staticmethod
 	def dict_factory(cursor, row):
+		"""Turns query results into dicts"""
 		d = {}
 		for idx, col in enumerate(cursor.description):
 			d[col[0]] = row[idx]
 		return d
 
-	'''
-		Table Parser
-	'''
 	@staticmethod
 	def table(tablelist):
+		"""Parses table names into joins and adds table prefixes"""
 		result = ''
 		if not isinstance(tablelist, list):
 			tablelist = [tablelist]
@@ -37,21 +37,17 @@ class Builder:
 				result += ' ' + Builder.prefix + table
 		return result
 
-	'''
-		Table Sanitization
-	'''
 	@staticmethod
 	def sanitize(val, data):
+		"""Adds data to list so that it can be sanitized with the python DB driver"""
 		if isinstance(val, int):
 			return val
 		data += [val]
 		return '?'
 
-	'''
-		Query Builder
-	'''
 	@staticmethod
 	def build(sql):
+		"""Builds the query from a dict into an sql query and data set"""
 		data = []
 		query = ''
 		querytype = ''
@@ -100,11 +96,9 @@ class Builder:
 		'''
 		return [query, data]
 
-	'''
-		Parses where clause for query builder
-	'''
 	@staticmethod
 	def where(where, data, brackets=False):
+		"""Parses where brackets and clauses"""
 		where_string = ''
 
 		for key, val in where.items():
