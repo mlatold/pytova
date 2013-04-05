@@ -2,7 +2,7 @@ Pytova
 ======
 
 #### About
-Pytova is a modern take on forum software created by Mike Lat written in Python released under GPL v3.
+Pytova is a modern take on forum software written in Python released under GPL v3.
 
 #### Features
 * Uses advanced web features (websockets, ajax, html5, localstorage, reponsive layouts, etc)
