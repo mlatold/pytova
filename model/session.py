@@ -1,7 +1,10 @@
-import uuid
 from datetime import datetime, timedelta
 from library import cache
+from db.query import Query
+import tornado.web
 import re
+
+sessions = {}
 
 class Session:
 	"""This is a session object that contains all the relative information
@@ -17,19 +20,24 @@ class Session:
 	web = None
 	ip = None
 
+	spiderurl = ""
 	spider = False
+	new = True
 	uri = []
 
-	def __init__(self, web):
-		self.sessionid = str(uuid.uuid4())
-		self.web = web
-		self.web.set_cookie('sessionid', self.sessionid)
+	def __init__(self, web, sessionid, spiderurl=None):
+		global sessions
+
+		self.sessionid = sessionid
+		if spiderurl != None:
+			spider = True
+			self.spiderurl = spiderurl
+		else:
+			self.web.set_cookie('sessionid', sessionid)
 
 	def __setattr__(self, name, value):
 		if name == 'web':
 			self.updated = datetime.now()
-			self.ip = value.request.remote_ip
-			self.agent = value.request.headers['User-Agent']
 			self.uri = str(value.request.uri).split('/')
 
 			# Accessing default url, go to default page
@@ -55,11 +63,8 @@ class Session:
 
 		super().__setattr__(name, value)
 
-	def get(self, value):
-		self.counter = 7
-		return ''
-
 	def valid(self, web):
+		"""Checks if this session is still valid"""
 		# Spiders bypass all checks
 		if self.spider == True:
 			return True
@@ -70,3 +75,8 @@ class Session:
 		if datetime.now() - timedelta(minutes=int(cache.get('configuration', 'sessionlength'))) > self.updated:
 			return False
 		return True
+
+	def update(self):
+		# New session needs a database insert
+		if self.new:
+			return

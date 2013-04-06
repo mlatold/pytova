@@ -1,7 +1,9 @@
 from db.builder import Builder
 from db.query import ini
+import tornado.gen
 import sqlite3
 import re
+import time
 connection = None
 
 class Driver(Builder):
@@ -62,7 +64,8 @@ class Driver(Builder):
 
 	def get(self, doclose=True):
 		"""Returns rows as a dict"""
-		result = self.execute(False).fetchall()
+		result = self.execute(False)
+		result = result.fetchall()
 		self.close(doclose)
 		return result
 
