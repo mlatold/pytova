@@ -16,11 +16,9 @@ import tornado.websocket
 import tornado.ioloop
 import tornado.web
 
-from model.session import Session
-from model.pytova import Pytova
+from model.pytova import Pytova, ini
 from library import cache
 from control import *
-from db.query import ini
 
 """
 class WebHandler(tornado.web.RequestHandler):
@@ -78,13 +76,15 @@ class StaticHandler(tornado.web.StaticFileHandler):
 	def set_extra_headers(self, path):
 		self.set_header("Server", "Pytova/Tornado")
 
-test = []
+routes = []
 for file in os.listdir(os.path.abspath(os.path.join(os.path.dirname(__file__), "control"))):
 	if file[-3:] == '.py' and file != '__init__.py':
-		test.append((r"/" + file[:-3] + ".*", getattr(sys.modules['control.' + file[:-3]], "Control" + file[:-3].title()) ))
+		routes.append((r"/" + file[:-3] + ".*", getattr(sys.modules['control.' + file[:-3]], "Control" + file[:-3].title()) ))
 
-webserver = tornado.web.Application(test + [
-	(r'/static/([a-zA-Z0-9_\./]*)', StaticHandler, {'path': './static/'}),
+webserver = tornado.web.Application(routes + [
+	(r'/static/([a-zA-Z0-9_\./]*)', StaticHandler, {'path': './static/'}), # Static assets
+	(r'/', forum.ControlForum), # Default page
+	(r'.*', Pytova) # 404 handler
 ], debug=ini.getboolean('advanced', 'debug'))
 
 class SocketHandler(tornado.websocket.WebSocketHandler):

@@ -1,10 +1,13 @@
 from model.pytova import Pytova
-import tornado.web
+import inspect
 
 class ControlAccount(Pytova):
-	def index(self):
-		return 'the my accounts page'
 
-	def get(self):
-		self.output = "test"
-		super().get()
+	def get(self, method={}):
+		super().get({
+			'': self.index
+		})
+
+
+	def index(self, test='what'):
+		self.output = 'the my accounts page' + test

@@ -3,7 +3,7 @@ import re
 
 class Builder:
 	"""Generic Query Builder
-	
+
 	Contains methods for building and parsing queries that is flexible between
 	potentially multipule database configurations.
 	"""
@@ -84,7 +84,7 @@ class Builder:
 
 		if 'select' in sql:
 			query = 'SELECT ' + sql['select'] + ' FROM' + Builder.table(sql['join'])
-			
+
 		'''
 				query = {
 					'select': 'SELECT'
