@@ -6,6 +6,7 @@ header#head {
 		border-bottom: 1px solid #999;
 		.box-shadow(0px, 5px, 30px);
 	}
+
 	ul {
 		width: @site-width-highres;
 		margin: 0 auto;
@@ -29,7 +30,8 @@ header#head {
 			display: inline-block;
 		}
 
-		li.on:after {
+		// TODO: Fix this guy so it hides in overflow: auto (probably the fault of pos absolute with zindex 1)
+		li.on a:after {
 			display: block;
 			width: 6px;
 			height: 6px;
@@ -43,23 +45,14 @@ header#head {
 			.rotate(45deg);
 		}
 
-		li.account {
+		li:first-child {
 			float: right;
+
 			a {
-				float: left;
-				text-align: right;
 				width: auto;
 				color: @c1-3;
 			}
-			a:first-child {
-				color: #999999;
-				width: 40px;
-				text-align: right;
 
-				&:hover {
-					color: #fff;
-				}
-			}
 			.avatar {
 				float: left;
 				height: 20px;
@@ -68,12 +61,23 @@ header#head {
 			}
 		}
 
-		li.site a {
-				text-align: left;
-				width: auto;
-				padding: 0 20px 0 0;
-				color: @c2-3;
-				text-shadow: none;
+		li#menu {
+			float: right;
+
+			a {
+				width: 60px;
+			}
+		}
+
+		li#site a {
+			text-align: left;
+			width: auto;
+			padding: 0 20px 0 0;
+			color: @c2-3;
+
+			&:hover {
+				color: #fff;
+			}
 		}
 
 		li a:hover, li.on a {

@@ -18,13 +18,12 @@ import http.client
 cache.add('configuration', select='name, value')
 
 # Lanuage Config
-LANGUAGE = 'en'
-LANGUAGEPATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../lang"))
-lng = {}
+LANGUAGE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../lang"))
+language_loader = {}
 sessions = {}
 
 # Template Loader
-loader = tornado.template.Loader(os.path.join(os.path.dirname(__file__), "../view"), autoescape=None)
+template_loader = tornado.template.Loader(os.path.join(os.path.dirname(__file__), "../view"), autoescape=None)
 
 class Pytova(tornado.web.RequestHandler):
 	"""Pytova Master Controller
@@ -36,11 +35,11 @@ class Pytova(tornado.web.RequestHandler):
 	As an object, everything in here is contextual to the user's request/session
 	"""
 	session_id = None
+	language = "en"
 	updated = None
 	spiderurl = ""
 	output = ""
 	spider = False
-	new = True
 	uri = ()
 
 	__baseurl = cache.get('configuration', 'url').strip('/') + '/'
@@ -48,19 +47,22 @@ class Pytova(tornado.web.RequestHandler):
 	__invalidurlchars = re.compile(r'[^a-z0-9\./:_]', re.I)
 
 	def __init__(self, application, request, **kwargs):
-		global loader, lng, LANGUAGE, sessions
+		global sessions, template_loader, language_loader, LANGUAGE_PATH
 		super().__init__(application, request, **kwargs)
 		# Reload langs/templates if they're not populated, or if we're in debug mode
 		if self.settings.get("debug") or len(lng) == 0:
-			loader.reset()
-			lng = {}
-			for file in os.listdir(LANGUAGEPATH):
-				if file[-4:] == '.ini':
-					lng[file[:-4]] = configparser.ConfigParser()
-					lng[file[:-4]].read(os.path.join(LANGUAGEPATH, file))
+			template_loader.reset()
+			language_loader = {}
+			for file in os.listdir(LANGUAGE_PATH):
+				if file.endswith('.ini'):
+					language_loader[file[:-4]] = configparser.ConfigParser()
+					language_loader[file[:-4]].read(os.path.join(LANGUAGE_PATH, file))
 		self.__timer = time.time()
 		self.session_id = self.get_cookie('session_id')
-		if self.session_id in sessions and self.spider == False and not (self.request.remote_ip != sessions[self.session_id]['remote_ip'] or self.request.headers.get('User-Agent') != sessions[self.session_id]['user_agent'] or datetime.now() - timedelta(minutes=int(15)) > sessions[self.session_id]['updated']):
+		if (self.session_id in sessions and self.spider == False and not
+				(self.request.remote_ip != sessions[self.session_id]['remote_ip'] or
+				self.request.headers.get('User-Agent') != sessions[self.session_id]['user_agent'] or
+				datetime.now() - timedelta(minutes=int(15)) > sessions[self.session_id]['updated'])):
 			self.session_id = None
 		if self.__baseurl == "/":
 			self.__baseurl = self.__invalidurlchars.sub('', self.request.protocol + "://" + self.request.host).strip('/') + '/'
@@ -78,9 +80,16 @@ class Pytova(tornado.web.RequestHandler):
 			if self.session_id == None:
 				self.session_id = str(uuid.uuid4())
 				self.set_cookie('session_id', self.session_id)
-		sessions.setdefault(self.session_id, { 'spider': self.spider, 'remote_ip': self.request.remote_ip, 'user_agent': self.request.headers.get('User-Agent') })['updated'] = datetime.now()
+		sessions.setdefault(self.session_id, {
+			'new': True,
+			'spider': self.spider,
+			'remote_ip': self.request.remote_ip,
+			'user_agent': self.request.headers.get('User-Agent')
+		})['updated'] = datetime.now()
 		# Parse URI argument
 		uri = '/' + str(self.request.uri).strip('/').lower()
+		if uri == '/':
+			uri = '/forum/'
 		while uri.count('/') < 2:
 			uri += '/'
 		self.uri = tuple(uri.split('/'))
@@ -92,12 +101,18 @@ class Pytova(tornado.web.RequestHandler):
 			method(*self.uri[3:len(inspect.getfullargspec(method).args) + 2])
 		if self._finished:
 			return
-		self.write(self.view('wrapper', output=False, content=self.output, year=date.today().year, render=self.word('render', 'debug', time=time.time() - self.__timer)))
+		self.write(self.view('wrapper',
+			output=False,
+			content=self.output,
+			year=date.today().year,
+			on={self.uri[1]:' class="on"'},
+			render=self.word('render', 'debug', time=time.time() - self.__timer)
+		))
 
 	def view(self, file, output=True, **args):
 		"""Loads template using Tornados Template Engine"""
 		global loader
-		out = loader.load(file + ".html").generate(url=self.url, word=self.word, escape=html.escape, **args)
+		out = template_loader.load(file + ".html").generate(url=self.url, word=self.word, escape=html.escape, **args)
 		if output == False:
 			return out
 		else:
@@ -111,8 +126,8 @@ class Pytova(tornado.web.RequestHandler):
 
 	def word(self, word, scope='global', fallback='---', **args):
 		"""Returns a formatted word from the language file"""
-		global lng, LANGUAGE
-		return lng[LANGUAGE].get(scope, word, raw=True, fallback=fallback).format(**args)
+		global language_loader
+		return language_loader[self.language].get(scope, word, raw=True, fallback=fallback).format(**args)
 
 	def set_extra_headers(self, path):
 		"""Set default headers"""
@@ -121,7 +136,7 @@ class Pytova(tornado.web.RequestHandler):
 		self.set_header("Cache-control", "no-cache, must-revalidate")
 
 	def write_error(self, status_code=404, scope='error', **kwargs):
-		"""Error handler"""
+		"""Global Error handler"""
 		if self.settings.get("debug") and "exc_info" in kwargs:
 			self.output = self.view('error', output=False, message='<br />'.join(traceback.format_exception(*kwargs["exc_info"])))
 		else:

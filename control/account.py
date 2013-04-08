@@ -1,9 +1,8 @@
 from model.pytova import Pytova
-import inspect
 
 class ControlAccount(Pytova):
 
-	def get(self, method={}):
+	def get(self):
 		super().get({
 			'': self.index
 		})
