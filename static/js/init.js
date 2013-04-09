@@ -7,6 +7,10 @@ $().ready(function(){
 	var offset = new Date().getTimezoneOffset() * -1;
 
 	if(parseInt(offset) != parseInt(lat_static.time_offset)) {
+
+
+
+		/*
 		lat_static.time_offset = offset;
 		$.post(lat_static['url'] + 'account/timezone', { json: 1, timezone: offset });
 		$('time').each(function(index) {
@@ -18,10 +22,10 @@ $().ready(function(){
 			now_t.setDate(now_t.getDate() + 1);
 			now_y.setDate(now_t.getDate() - 1);
 
-			var pad = function(n) { 
+			var pad = function(n) {
 				return (n < 10 ? '0' : '') + n;
 			}
-			
+
 			var time = date.getHours() + ':' + date.getMinutes();
 			if(lat_static['date_24'] == 0) {
 				var hours = date.getHours();
@@ -35,10 +39,10 @@ $().ready(function(){
 
 			if(now.getFullYear() == date.getFullYear() && now.getMonth() == date.getMonth() && now.getDate() == date.getDate()) {
 				new_date = lat_static['today'].replace('%s', time);
-			}			
+			}
 			else if(now_y.getFullYear() == date.getFullYear() && now_y.getMonth() == date.getMonth() && now_y.getDate() == date.getDate()) {
 				new_date = lat_static['yesterday'].replace('%s', time);
-			}			
+			}
 			else if(now_t.getFullYear() == date.getFullYear() && now_t.getMonth() == date.getMonth() && now_t.getDate() == date.getDate()) {
 				new_date = lat_static['tommorow'].replace('%s', time);
 			}
@@ -49,7 +53,7 @@ $().ready(function(){
 				else {
 					new_date = lat_static.date_short;
 				}
-				
+
 				new_date = new_date.replace(/\[(s|d|dd|m|mm|yy|yyyy|day|month)\]/g, function(z, match) {
 					switch(match) {
 						case 'd':
@@ -72,15 +76,14 @@ $().ready(function(){
 							return lat_static['suffix_' + date.getDate().slice(-1)];
 					}
 				});
-				
+
 				new_date = new_date + ' ' + time;
 			}
-			
+
 			$(this).html(new_date);
-		});
+		});*/
 	}
 
-	// delay popstate so it doesn't fire immediately
 	window.setTimeout(function() {
 		$(window).bind('popstate', function(){
 			get_page(location.pathname);
@@ -90,21 +93,22 @@ $().ready(function(){
 
 /**
  * Initalizes loaded page
- * 
+ *
  * @param context
  * @returns {Boolean}
  */
+ /*
 function init(context) {
 	if(typeof context == 'undefined') context = null;
 
 	history.replaceState({}, document.title, lat['current_url']);
-	
+
 	if(js['count'] != js['loaded']) {
 		return false;
 	}
-	
+
 	$('iframe[src="about:blank"]').remove(); // removes recaptcha iframes
-	
+
 	$('a[rel!=external][href^="'+lat_static['url']+'"]', context).on('click', function(e){
 		if (typeof window.history.pushState == 'function' && e.button == 0) {
 			history.pushState({}, document.title, $(this).attr('href'));
@@ -143,13 +147,14 @@ function ajax_loading(act) {
 	else if (act == 'show') {
 	}
 }
+*/
 /**
  * Loads a new page by ajax
- * 
+ *
  * @param url
- */
+ *//*
 function get_page(url) {
-	
+
 
 	$('#content').after('<div id="loading"></div>');
 	var loading = $('#loading');
@@ -159,7 +164,7 @@ function get_page(url) {
 		loading_r = (loading_r + 1) % 360;
 		loading.css({ WebkitTransform: 'rotate(' + loading_r + 'deg)', '-moz-transform': 'rotate(' + loading_r + 'deg)'});
 	}, 5));
-	
+
 	if (typeof window.history.pushState == 'function') {
 		//$("#content").css({ opacity: 0.5 });
 		//$('body').append('<div id="load"></div>');
@@ -179,13 +184,13 @@ function get_page(url) {
 	else {
 		window.location = url;
 	}
-}
+}*/
 
 /**
  * Load page contents from ajax response onto the page
- * 
+ *
  * @param data
- */
+ *//*
 function load_page(data) {
 
 	// refresh variable array
@@ -198,7 +203,7 @@ function load_page(data) {
 		$('header:first').html(data['header']);
 		init($('header:first'));
 	}
-	
+
 	// load content onto the page
 	$('html').attr('class', data['classes']);
 	$('#content *').off();
@@ -206,7 +211,7 @@ function load_page(data) {
 	$('#loading').remove();
 	$('#content').html(data['content']);
 	$(window).scrollTop(0); // scroll to the top of the page
-	
+
 	// finish up and initalize the page
 	init('#content');
 
@@ -232,4 +237,4 @@ function load_page(data) {
 		js['count'] = 0;
 		js['loaded'] = 0;
 	}
-}
+}*/

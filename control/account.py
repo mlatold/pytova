@@ -9,4 +9,5 @@ class ControlAccount(Pytova):
 
 
 	def index(self, test='what'):
+
 		self.output = 'the my accounts page' + test

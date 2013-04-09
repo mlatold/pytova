@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import html
 import uuid
 import inspect
@@ -34,6 +35,7 @@ class Pytova(tornado.web.RequestHandler):
 
 	As an object, everything in here is contextual to the user's request/session
 	"""
+
 	session_id = None
 	language = "en"
 	updated = None
@@ -42,6 +44,10 @@ class Pytova(tornado.web.RequestHandler):
 	spider = False
 	uri = ()
 
+	js_static = {}
+	js_files = {}
+	js = {}
+
 	__baseurl = cache.get('configuration', 'url').strip('/') + '/'
 	__timer = None
 	__invalidurlchars = re.compile(r'[^a-z0-9\./:_]', re.I)
@@ -49,6 +55,7 @@ class Pytova(tornado.web.RequestHandler):
 	def __init__(self, application, request, **kwargs):
 		global sessions, template_loader, language_loader, LANGUAGE_PATH
 		super().__init__(application, request, **kwargs)
+
 		# Reload langs/templates if they're not populated, or if we're in debug mode
 		if self.settings.get("debug") or len(lng) == 0:
 			template_loader.reset()
@@ -58,25 +65,30 @@ class Pytova(tornado.web.RequestHandler):
 					language_loader[file[:-4]] = configparser.ConfigParser()
 					language_loader[file[:-4]].read(os.path.join(LANGUAGE_PATH, file))
 		self.__timer = time.time()
+
+		# Check for valid session
 		self.session_id = self.get_cookie('session_id')
 		if (self.session_id in sessions and self.spider == False and not
 				(self.request.remote_ip != sessions[self.session_id]['remote_ip'] or
-				self.request.headers.get('User-Agent') != sessions[self.session_id]['user_agent'] or
+				self.request.headers.get('User-Agent', '') != sessions[self.session_id]['user_agent'] or
 				datetime.now() - timedelta(minutes=int(15)) > sessions[self.session_id]['updated'])):
 			self.session_id = None
+
+		# Guess base URL if one isn't defined by admin
 		if self.__baseurl == "/":
 			self.__baseurl = self.__invalidurlchars.sub('', self.request.protocol + "://" + self.request.host).strip('/') + '/'
-		# Creating a session
+		self.js_static['url'] = self.__baseurl
+
+		# Creating a session ID
 		if self.session_id == None or not self.session_id in sessions:
 			if cache.get('configuration', 'spiders_enabled'):
-				agent = self.request.headers.get('User-Agent').lower()
+				agent = self.request.headers.get('User-Agent', '').lower()
 				for spiderslist in cache.get('configuration', 'spiders_list').splitlines():
 					spider = spiderslist.split(',')
 					if agent.find(spider[0].lower()) >= 0:
 						self.session_id, self.spider_url = spider
 						self.spider = True
 						break
-			# Create a new sessionid
 			if self.session_id == None:
 				self.session_id = str(uuid.uuid4())
 				self.set_cookie('session_id', self.session_id)
@@ -84,9 +96,11 @@ class Pytova(tornado.web.RequestHandler):
 			'new': True,
 			'spider': self.spider,
 			'remote_ip': self.request.remote_ip,
-			'user_agent': self.request.headers.get('User-Agent')
+			'user_agent': self.request.headers.get('User-Agent', ''),
+			'time_offset': time.altzone / 60 * -1,
 		})['updated'] = datetime.now()
-		# Parse URI argument
+
+		# Parse URI argument into a tuple (minimum 3 length for convenience)
 		uri = '/' + str(self.request.uri).strip('/').lower()
 		if uri == '/':
 			uri = '/forum/'
@@ -94,20 +108,38 @@ class Pytova(tornado.web.RequestHandler):
 			uri += '/'
 		self.uri = tuple(uri.split('/'))
 
+	def post(self):
+		self.get()
+
 	def get(self, methodlist={}):
 		"""Called by tornado, meant to be overridden by parent controllers"""
 		if self.output == "":
 			method = methodlist.get(self.uri[2], self.write_error)
 			method(*self.uri[3:len(inspect.getfullargspec(method).args) + 2])
+
 		if self._finished:
 			return
+
+		self.js_static['time_offset'] = self.session('time_offset')
+		self.js_static['month'] = []
+		for month in range(12):
+			self.js_static['month'].append(self.word('month_' + str(month + 1), 'date'))
+		self.js_static['day'] = []
+		for day in range(7):
+			self.js_static['day'].append(self.word('day_' + str(day + 1), 'date'))
+
 		self.write(self.view('wrapper',
 			output=False,
 			content=self.output,
 			year=date.today().year,
 			on={self.uri[1]:' class="on"'},
+			js=json.dumps(self.js, separators=(',', ':')),
+			js_static=json.dumps(self.js_static, separators=(',', ':')),
 			render=self.word('render', 'debug', time=time.time() - self.__timer)
 		))
+
+	def date(time, long=False):
+		return ''
 
 	def view(self, file, output=True, **args):
 		"""Loads template using Tornados Template Engine"""
@@ -123,6 +155,14 @@ class Pytova(tornado.web.RequestHandler):
 		if url[-1:] != "/" and url != "":
 			url += "/"
 		return self.__baseurl + url
+
+	def session(self, name, session_id=None, fallback=''):
+		"""Grabs variable stored in session"""
+		global sessions
+		if session_id == None:
+			session_id = self.session_id
+		return sessions[session_id].get(name, fallback)
+
 
 	def word(self, word, scope='global', fallback='---', **args):
 		"""Returns a formatted word from the language file"""

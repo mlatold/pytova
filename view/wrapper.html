@@ -14,22 +14,12 @@
 	<!--[if lt IE9]><script>alert('IE NOT SUPPORTED');window.location='https://www.firefox.com';</script><![endif]-->
 </head>
 <header id="head">
-	<section>
-		<nav>
-			<ul>
-				<li{{on.get('account','')}}><a href="{{url('account')}}"><img src="{{url('static/img')}}squares.png" class="avatar" alt="" />{{word('login_register')}}</a></li>
-				<li id="menu"><a href="{{url()}}">{{word('menu')}}</a></li>
-				<li id="site"><a href="{{url()}}">Pytova</a></li>
-				<li{{on.get('forum','')}}><a href="{{url()}}">{{word('forums')}}</a></li>
-				<li{{on.get('member','')}}><a href="{{url('member')}}">{{word('members')}}</a></li>
-			</ul>
-		</nav>
-	</section>
+	{% include header.html %}
 </header>
 <section id="content">
 	{{content}}
 </section>
-<script>var lat_static = <?php echo json_encode($jss) ?>; var lat = <?php echo json_encode($jsv) ?>;</script>
+<script>var lat_static={{js_static}}, lat={{js}};</script>
 <script src="{{url()}}static/js/jquery.js"></script>
 <script src="{{url()}}static/js/init.js"></script>
 <!-- {{render}} -->
