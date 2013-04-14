@@ -3,85 +3,47 @@ var js = { loaded: 0, count: 0, code: [], data_buffer: null };
 $.ajaxSetup({cache: false});
 
 $().ready(function(){
-	init();
+	//init();
+
 	var offset = new Date().getTimezoneOffset() * -1;
-
-	if(parseInt(offset) != parseInt(lat_static.time_offset)) {
-
-
-
-		/*
-		lat_static.time_offset = offset;
-		$.post(lat_static['url'] + 'account/timezone', { json: 1, timezone: offset });
+	if(parseInt(offset) != parseInt(jss.time_offset)) {
+		jss.time_offset = offset;
+		$.post(jss['url'] + 'account/timezone', { json: 1, time_offset: offset });
 		$('time').each(function(index) {
 			var new_date = '';
 			var now = new Date();
-			var now_t = now;
-			var now_y = now;
+			var now_t = now; // tommorow
+			var now_y = now; // yesterday
 			var date = new Date($(this).data('unix') * 1000);
 			now_t.setDate(now_t.getDate() + 1);
 			now_y.setDate(now_t.getDate() - 1);
 
-			var pad = function(n) {
-				return (n < 10 ? '0' : '') + n;
-			}
-
 			var time = date.getHours() + ':' + date.getMinutes();
-			if(lat_static['date_24'] == 0) {
-				var hours = date.getHours();
+			if(jss['time_24'] == 0) {
+				var hours = date.getHours() + 1;
 				if(hours > 12) {
-					time = (hours - 12) + ':' + date.getMinutes() + lat_static.pm;
+					time = (hours - 12) + ':' + ('0' + date.getMinutes()).slice(-2) + 'pm';
 				}
 				else {
-					time = hours + ':' + date.getMinutes() + lat_static.am;
+					time = hours + ':' + ('0' + date.getMinutes()).slice(-2) + 'am';
 				}
 			}
 
 			if(now.getFullYear() == date.getFullYear() && now.getMonth() == date.getMonth() && now.getDate() == date.getDate()) {
-				new_date = lat_static['today'].replace('%s', time);
+				new_date = jss['today'].replace('{time}', time);
 			}
 			else if(now_y.getFullYear() == date.getFullYear() && now_y.getMonth() == date.getMonth() && now_y.getDate() == date.getDate()) {
-				new_date = lat_static['yesterday'].replace('%s', time);
+				new_date = jss['yesterday'].replace('{time}', time);
 			}
 			else if(now_t.getFullYear() == date.getFullYear() && now_t.getMonth() == date.getMonth() && now_t.getDate() == date.getDate()) {
-				new_date = lat_static['tommorow'].replace('%s', time);
+				new_date = jss['tommorow'].replace('{time}', time);
 			}
 			else {
-				if($(this).data('long')) {
-					new_date = lat_static.date_long;
-				}
-				else {
-					new_date = lat_static.date_short;
-				}
-
-				new_date = new_date.replace(/\[(s|d|dd|m|mm|yy|yyyy|day|month)\]/g, function(z, match) {
-					switch(match) {
-						case 'd':
-							return date.getDate();
-						case 'dd':
-							return pad(date.getDate());
-						case 'm':
-							return date.getMonth() + 1;
-						case 'mm':
-							return pad(date.getMonth() + 1);
-						case 'yy':
-							return date.getFullYear().slice(-2);
-						case 'yyyy':
-							return date.getFullYear();
-						case 'day':
-							return lat_static['day_' + y.getDay()];
-						case 'month':
-							return lat_static['month_' + date.getMonth()];
-						case 's':
-							return lat_static['suffix_' + date.getDate().slice(-1)];
-					}
-				});
-
-				new_date = new_date + ' ' + time;
+				new_date = date.getFullYear() + '-' + ('0' + date.getMonth()).slice(-2) + '-' + ('0' + date.getDate()).slice(-2) + ' ' + time;
 			}
 
 			$(this).html(new_date);
-		});*/
+		});
 	}
 
 	window.setTimeout(function() {

@@ -1,18 +1,14 @@
 header#head {
-	height: 35px;
 
 	nav {
+		.box-shadow(0px, 5px, 30px);
 		background: #2d2d2d;
 		border-bottom: 1px solid #999;
-		.box-shadow(0px, 5px, 30px);
 	}
 
 	ul {
 		width: @site-width-highres;
 		margin: 0 auto;
-		height: 30px;
-		line-height: 30px;
-		overflow: hidden;
 
 		li a {
 			display: block;
@@ -27,6 +23,7 @@ header#head {
 		}
 
 		li {
+			line-height: 25px;
 			display: inline-block;
 		}
 
@@ -42,6 +39,7 @@ header#head {
 			z-index: 1;
 			content: '';
 			position: absolute;
+			float: left;
 			.rotate(45deg);
 		}
 
@@ -57,7 +55,7 @@ header#head {
 				float: left;
 				height: 20px;
 				display: inline-block;
-				margin: 5px 10px 0 10px;
+				margin: 2px 10px 0 10px;
 			}
 		}
 

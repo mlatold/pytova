@@ -6,6 +6,7 @@ import uuid
 import inspect
 import traceback
 import configparser
+import time
 from datetime import datetime, timedelta, date
 
 import tornado.template
@@ -37,11 +38,13 @@ class Pytova(tornado.web.RequestHandler):
 	"""
 
 	session_id = None
+	spider_url = ""
+	navigation = []
 	language = "en"
 	updated = None
-	spiderurl = ""
 	output = ""
 	spider = False
+	title = None
 	uri = ()
 
 	js_static = {}
@@ -68,7 +71,7 @@ class Pytova(tornado.web.RequestHandler):
 
 		# Check for valid session
 		self.session_id = self.get_cookie('session_id')
-		if (self.session_id in sessions and self.spider == False and not
+		if (self.session_id in sessions and
 				(self.request.remote_ip != sessions[self.session_id]['remote_ip'] or
 				self.request.headers.get('User-Agent', '') != sessions[self.session_id]['user_agent'] or
 				datetime.now() - timedelta(minutes=int(15)) > sessions[self.session_id]['updated'])):
@@ -97,7 +100,7 @@ class Pytova(tornado.web.RequestHandler):
 			'spider': self.spider,
 			'remote_ip': self.request.remote_ip,
 			'user_agent': self.request.headers.get('User-Agent', ''),
-			'time_offset': time.altzone / 60 * -1,
+			'settings': { 'time_offset': int(time.altzone / 60 * -1), 'time_24': False }
 		})['updated'] = datetime.now()
 
 		# Parse URI argument into a tuple (minimum 3 length for convenience)
@@ -108,25 +111,30 @@ class Pytova(tornado.web.RequestHandler):
 			uri += '/'
 		self.uri = tuple(uri.split('/'))
 
+		# Initalize navigation (breadcrumbs, mainly)
+		self.navigation.append(("Pytova", self.__baseurl))
+
 	def post(self):
 		self.get()
 
 	def get(self, methodlist={}):
 		"""Called by tornado, meant to be overridden by parent controllers"""
+		out = False
 		if self.output == "":
 			method = methodlist.get(self.uri[2], self.write_error)
-			method(*self.uri[3:len(inspect.getfullargspec(method).args) + 2])
+			out = method(*self.uri[3:len(inspect.getfullargspec(method).args) + 2])
 
-		if self._finished:
+		if self._finished or out == False:
 			return
+		elif type(out) is str:
+			self.output += out
 
-		self.js_static['time_offset'] = self.session('time_offset')
-		self.js_static['month'] = []
-		for month in range(12):
-			self.js_static['month'].append(self.word('month_' + str(month + 1), 'date'))
-		self.js_static['day'] = []
-		for day in range(7):
-			self.js_static['day'].append(self.word('day_' + str(day + 1), 'date'))
+		self.js_static['yesterday'] = self.word("yesterday", raw=True)
+		self.js_static['tommorow'] = self.word("tommorow", raw=True)
+		self.js_static['today'] = self.word("today", raw=True)
+		self.js_static['time_24'] = self.user('time_24')
+		self.js_static['time_offset'] = self.user('time_offset')
+		self.js_static['url'] = self.__baseurl
 
 		self.write(self.view('wrapper',
 			output=False,
@@ -138,13 +146,37 @@ class Pytova(tornado.web.RequestHandler):
 			render=self.word('render', 'debug', time=time.time() - self.__timer)
 		))
 
-	def date(time, long=False):
-		return ''
+	def date(self, unix):
+		"""Returns formatted HTML date tag"""
+		if type(unix) is datetime:
+			unix = time.mktime(unix.timetuple())
+		day = datetime.utcfromtimestamp(unix) + timedelta(minutes=self.user('time_offset'))
+
+		if self.user('time_24'):
+			stime = day.strftime("%H:%M").lstrip('0')
+		else:
+			stime = day.strftime("%I:%M%p").lstrip('0').lower()
+
+		if day.date() == datetime.today().date(): # Today
+			out = self.word("today", time=stime)
+		elif day.date() ==  (datetime.today() - timedelta(days=1)).date(): # Yesterday
+			out = self.word("yesterday", time=stime)
+		elif day.date() ==  (datetime.today() + timedelta(days=1)).date(): # Tommorow
+			out = self.word("tommorow", time=stime)
+		else:
+			out = day.strftime("%Y-%m-%d " + stime)
+		return  '<time datetime="' + datetime.utcfromtimestamp(unix).strftime("%Y-%m-%d %H:%M") + 'Z" data-unix="' + str(int(unix)) + '">' + out + '</time>'
+
+	def user(self, name, value=None, fallback=None):
+		global sessions
+		if value != None:
+			sessions[self.session_id]['settings'][name] = value
+		return sessions[self.session_id]['settings'].get(name, fallback)
 
 	def view(self, file, output=True, **args):
 		"""Loads template using Tornados Template Engine"""
-		global loader
-		out = template_loader.load(file + ".html").generate(url=self.url, word=self.word, escape=html.escape, **args)
+		global template_loader
+		out = template_loader.load(file + ".html").generate(url=self.url, word=self.word, date=self.date, escape=html.escape, **args)
 		if output == False:
 			return out
 		else:
@@ -156,7 +188,7 @@ class Pytova(tornado.web.RequestHandler):
 			url += "/"
 		return self.__baseurl + url
 
-	def session(self, name, session_id=None, fallback=''):
+	def session(self, name, session_id=None, fallback=None):
 		"""Grabs variable stored in session"""
 		global sessions
 		if session_id == None:
@@ -164,10 +196,14 @@ class Pytova(tornado.web.RequestHandler):
 		return sessions[session_id].get(name, fallback)
 
 
-	def word(self, word, scope='global', fallback='---', **args):
+	def word(self, word, scope='global', fallback='---', raw=False, **args):
 		"""Returns a formatted word from the language file"""
 		global language_loader
-		return language_loader[self.language].get(scope, word, raw=True, fallback=fallback).format(**args)
+		word = language_loader[self.language].get(scope, word, raw=True, fallback=fallback)
+		if raw:
+			return word
+		else:
+			return word.format(**args)
 
 	def set_extra_headers(self, path):
 		"""Set default headers"""
@@ -175,7 +211,7 @@ class Pytova(tornado.web.RequestHandler):
 		self.set_header("Expires", "Sat, 1 Jan 2000 01:00:00 GMT")
 		self.set_header("Cache-control", "no-cache, must-revalidate")
 
-	def write_error(self, status_code=404, scope='error', **kwargs):
+	def write_error(self, status_code=404, scope='global', **kwargs):
 		"""Global Error handler"""
 		if self.settings.get("debug") and "exc_info" in kwargs:
 			self.output = self.view('error', output=False, message='<br />'.join(traceback.format_exception(*kwargs["exc_info"])))
