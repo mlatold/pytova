@@ -2,56 +2,55 @@ var js = { loaded: 0, count: 0, code: [], data_buffer: null };
 
 $.ajaxSetup({cache: false});
 
-$().ready(function(){
-	//init();
+init();
 
-	var offset = new Date().getTimezoneOffset() * -1;
-	if(parseInt(offset) != parseInt(jss.time_offset)) {
-		jss.time_offset = offset;
-		$.post(jss['url'] + 'account/timezone', { json: 1, time_offset: offset });
-		$('time').each(function(index) {
-			var new_date = '';
-			var now = new Date();
-			var now_t = now; // tommorow
-			var now_y = now; // yesterday
-			var date = new Date($(this).data('unix') * 1000);
-			now_t.setDate(now_t.getDate() + 1);
-			now_y.setDate(now_t.getDate() - 1);
+var offset = new Date().getTimezoneOffset() * -1;
+console.log('time offset: ' + offset);
+if(parseInt(offset) != parseInt(jss.time_offset)) {
+	jss.time_offset = offset;
+	$.post(jss['url'] + 'account/timezone', { json: 1, time_offset: offset });
+	$('time').each(function(index) {
+		var new_date = '';
+		var now = new Date();
+		var now_t = now; // tommorow
+		var now_y = now; // yesterday
+		var date = new Date($(this).data('unix') * 1000 + (now.dst() ? 60 : 0));
+		now_t.setDate(now_t.getDate() + 1);
+		now_y.setDate(now_t.getDate() - 1);
 
-			var time = date.getHours() + ':' + date.getMinutes();
-			if(jss['time_24'] == 0) {
-				var hours = date.getHours() + 1;
-				if(hours > 12) {
-					time = (hours - 12) + ':' + ('0' + date.getMinutes()).slice(-2) + 'pm';
-				}
-				else {
-					time = hours + ':' + ('0' + date.getMinutes()).slice(-2) + 'am';
-				}
-			}
-
-			if(now.getFullYear() == date.getFullYear() && now.getMonth() == date.getMonth() && now.getDate() == date.getDate()) {
-				new_date = jss['today'].replace('{time}', time);
-			}
-			else if(now_y.getFullYear() == date.getFullYear() && now_y.getMonth() == date.getMonth() && now_y.getDate() == date.getDate()) {
-				new_date = jss['yesterday'].replace('{time}', time);
-			}
-			else if(now_t.getFullYear() == date.getFullYear() && now_t.getMonth() == date.getMonth() && now_t.getDate() == date.getDate()) {
-				new_date = jss['tommorow'].replace('{time}', time);
+		var time = date.getHours() + ':' + date.getMinutes();
+		if(jss['time_24'] == 0) {
+			var hours = date.getHours() + 1;
+			if(hours > 12) {
+				time = (hours - 12) + ':' + ('0' + date.getMinutes()).slice(-2) + 'pm';
 			}
 			else {
-				new_date = date.getFullYear() + '-' + ('0' + date.getMonth()).slice(-2) + '-' + ('0' + date.getDate()).slice(-2) + ' ' + time;
+				time = hours + ':' + ('0' + date.getMinutes()).slice(-2) + 'am';
 			}
+		}
 
-			$(this).html(new_date);
-		});
-	}
+		if(now.getFullYear() == date.getFullYear() && now.getMonth() == date.getMonth() && now.getDate() == date.getDate()) {
+			new_date = jss['today'].replace('{time}', time);
+		}
+		else if(now_y.getFullYear() == date.getFullYear() && now_y.getMonth() == date.getMonth() && now_y.getDate() == date.getDate()) {
+			new_date = jss['yesterday'].replace('{time}', time);
+		}
+		else if(now_t.getFullYear() == date.getFullYear() && now_t.getMonth() == date.getMonth() && now_t.getDate() == date.getDate()) {
+			new_date = jss['tommorow'].replace('{time}', time);
+		}
+		else {
+			new_date = date.getFullYear() + '-' + ('0' + date.getMonth()).slice(-2) + '-' + ('0' + date.getDate()).slice(-2) + ' ' + time;
+		}
 
-	window.setTimeout(function() {
-		$(window).bind('popstate', function(){
-			get_page(location.pathname);
-		});
-	}, 200);
-});
+		$(this).html(new_date);
+	});
+}
+
+window.setTimeout(function() {
+	$(window).bind('popstate', function(){
+		get_page(location.pathname);
+	});
+}, 200);
 
 /**
  * Initalizes loaded page
@@ -59,19 +58,19 @@ $().ready(function(){
  * @param context
  * @returns {Boolean}
  */
- /*
+
 function init(context) {
 	if(typeof context == 'undefined') context = null;
 
-	history.replaceState({}, document.title, lat['current_url']);
+	//history.replaceState({}, document.title, jss['current_url']);
 
 	if(js['count'] != js['loaded']) {
 		return false;
 	}
 
-	$('iframe[src="about:blank"]').remove(); // removes recaptcha iframes
+	//$('iframe[src="about:blank"]').remove(); // removes recaptcha iframes
 
-	$('a[rel!=external][href^="'+lat_static['url']+'"]', context).on('click', function(e){
+	$('a[rel!=external][href^="'+jss['url']+'"]', context).on('click', function(e){
 		if (typeof window.history.pushState == 'function' && e.button == 0) {
 			history.pushState({}, document.title, $(this).attr('href'));
 			get_page($(this).attr('href'));
@@ -89,6 +88,7 @@ function init(context) {
 
 	return true;
 }
+
 function ajax_loading(act) {
 	// Toggle
 	if(typeof act == undefined) {
@@ -109,18 +109,17 @@ function ajax_loading(act) {
 	else if (act == 'show') {
 	}
 }
-*/
+
 /**
  * Loads a new page by ajax
  *
  * @param url
- *//*
+ */
 function get_page(url) {
-
-
 	$('#content').after('<div id="loading"></div>');
 	var loading = $('#loading');
 	var loading_r = 0;
+	$(window).scrollTop(0); // scroll to the top of the page
 
 	loading.data('interval', setInterval(function(){
 		loading_r = (loading_r + 1) % 360;
@@ -136,7 +135,7 @@ function get_page(url) {
 			data: { json: 1 },
 			success: load_page,
 			error: function(jqXHR, textStatus, errorThrown) {
-				lat['current_url'] = url;
+				jss['current_url'] = url;
 				load_page({ content: jqXHR.responseText });
 				console.log(jqXHR, textStatus, errorThrown);
 			},
@@ -146,33 +145,29 @@ function get_page(url) {
 	else {
 		window.location = url;
 	}
-}*/
+}
 
 /**
  * Load page contents from ajax response onto the page
  *
  * @param data
- *//*
-function load_page(data) {
-
+ */
+function load_page(data, textStatus, jqXHR) {
 	// refresh variable array
-	if(data['jsv']) {
-		lat = data['jsv'];
-	}
+	js = data['js'];
 
 	if(data['header']) {
-		$('header:first *').off();
-		$('header:first').html(data['header']);
-		init($('header:first'));
+		$('header *').off();
+		$('header').html(data['header']);
+		init($('header'));
 	}
 
 	// load content onto the page
-	$('html').attr('class', data['classes']);
+	$('html').attr('classes', data['classes']);
 	$('#content *').off();
 	clearInterval($("#loading").data('interval'));
 	$('#loading').remove();
-	$('#content').html(data['content']);
-	$(window).scrollTop(0); // scroll to the top of the page
+	$('#content').html(data['out']);
 
 	// finish up and initalize the page
 	init('#content');
@@ -199,4 +194,4 @@ function load_page(data) {
 		js['count'] = 0;
 		js['loaded'] = 0;
 	}
-}*/
+}

@@ -72,7 +72,8 @@ class Pytova(tornado.web.RequestHandler):
 		# Check for valid session
 		self.session_id = self.get_cookie('session_id')
 		if (self.session_id in sessions and
-				(self.request.remote_ip != sessions[self.session_id]['remote_ip'] or
+				(self.reque
+st.remote_ip != sessions[self.session_id]['remote_ip'] or
 				self.request.headers.get('User-Agent', '') != sessions[self.session_id]['user_agent'] or
 				datetime.now() - timedelta(minutes=int(15)) > sessions[self.session_id]['updated'])):
 			self.session_id = None
@@ -102,7 +103,6 @@ class Pytova(tornado.web.RequestHandler):
 			'user_agent': self.request.headers.get('User-Agent', ''),
 			'settings': { 'time_offset': int(time.altzone / 60 * -1), 'time_24': False }
 		})['updated'] = datetime.now()
-
 		# Parse URI argument into a tuple (minimum 3 length for convenience)
 		uri = '/' + str(self.request.uri).strip('/').lower()
 		if uri == '/':
@@ -112,7 +112,7 @@ class Pytova(tornado.web.RequestHandler):
 		self.uri = tuple(uri.split('/'))
 
 		# Initalize navigation (breadcrumbs, mainly)
-		self.navigation.append(("Pytova", self.__baseurl))
+		self.navigation = [("Pytova", self.__baseurl)]
 
 	def post(self):
 		self.get()
@@ -136,15 +136,23 @@ class Pytova(tornado.web.RequestHandler):
 		self.js_static['time_offset'] = self.user('time_offset')
 		self.js_static['url'] = self.__baseurl
 
-		self.write(self.view('wrapper',
-			output=False,
-			content=self.output,
-			year=date.today().year,
-			on={self.uri[1]:' class="on"'},
-			js=json.dumps(self.js, separators=(',', ':')),
-			js_static=json.dumps(self.js_static, separators=(',', ':')),
-			render=self.word('render', 'debug', time=time.time() - self.__timer)
-		))
+		if self.get_argument('json', default=False):
+			self.write({
+				'js': self.js,
+				'out': self.output,
+				'nav': self.navigation
+			})
+		else:
+			self.write(self.view('wrapper',
+				output=False,
+				content=self.output,
+				year=date.today().year,
+				on={self.uri[1]:' class="on"'},
+				js=json.dumps(self.js, separators=(',', ':')),
+				js_static=json.dumps(self.js_static, separators=(',', ':')),
+				render=self.word('render', 'debug', time=time.time() - self.__timer),
+				navigation=self.navigation
+			))
 
 	def date(self, unix):
 		"""Returns formatted HTML date tag"""
@@ -167,34 +175,39 @@ class Pytova(tornado.web.RequestHandler):
 			out = day.strftime("%Y-%m-%d " + stime)
 		return  '<time datetime="' + datetime.utcfromtimestamp(unix).strftime("%Y-%m-%d %H:%M") + 'Z" data-unix="' + str(int(unix)) + '">' + out + '</time>'
 
-	def user(self, name, value=None, fallback=None):
-		global sessions
-		if value != None:
-			sessions[self.session_id]['settings'][name] = value
-		return sessions[self.session_id]['settings'].get(name, fallback)
-
-	def view(self, file, output=True, **args):
-		"""Loads template using Tornados Template Engine"""
-		global template_loader
-		out = template_loader.load(file + ".html").generate(url=self.url, word=self.word, date=self.date, escape=html.escape, **args)
-		if output == False:
-			return out
-		else:
-			self.output += out
-
-	def url(self, url=""):
-		"""Returns a formatted url"""
-		if url[-1:] != "/" and url != "":
-			url += "/"
-		return self.__baseurl + url
-
 	def session(self, name, session_id=None, fallback=None):
-		"""Grabs variable stored in session"""
+		"""Returns session contextual setting"""
 		global sessions
 		if session_id == None:
 			session_id = self.session_id
 		return sessions[session_id].get(name, fallback)
 
+	def user(self, name, value=None, fallback=None):
+		"""Returns user contextual setting"""
+		global sessions
+		if value != None:
+			sessions[self.session_id]['settings'][name] = value
+		return sessions[self.session_id]['settings'].get(name, fallback)
+
+	def redirect(self, url, **args):
+		"""Inserts base url when redirecting"""
+		if url[:1] == '/':
+			url = self.url(url)
+			if self.get_argument('json', default=False):
+				url += '?json=1&redirect=1'
+		super().redirect(url, **args)
+
+	def view(self, file, output=True, **args):
+		"""Loads template using Tornados Template Engine"""
+		global template_loader
+		out = template_loader.load(file + ".html").generate(url=self.url, word=self.word, date=self.date, escape=html.escape, **args).decode("utf-8")
+		if output == True:
+			self.output += out
+		return out
+
+	def url(self, url=""):
+		"""Returns a formatted url"""
+		return (self.__baseurl + url.lstrip("/")).rstrip("/") + "/"
 
 	def word(self, word, scope='global', fallback='---', raw=False, **args):
 		"""Returns a formatted word from the language file"""
