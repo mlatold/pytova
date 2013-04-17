@@ -1,48 +1,44 @@
 var js = { loaded: 0, count: 0, code: [], data_buffer: null };
-
 $.ajaxSetup({cache: false});
-
 init();
-
 var offset = new Date().getTimezoneOffset() * -1;
-console.log('time offset: ' + offset);
-if(parseInt(offset) != parseInt(jss.time_offset)) {
-	jss.time_offset = offset;
-	$.post(jss['url'] + 'account/timezone', { json: 1, time_offset: offset });
-	$('time').each(function(index) {
-		var new_date = '';
-		var now = new Date();
-		var now_t = now; // tommorow
-		var now_y = now; // yesterday
-		var date = new Date($(this).data('unix') * 1000 + (now.dst() ? 60 : 0));
-		now_t.setDate(now_t.getDate() + 1);
-		now_y.setDate(now_t.getDate() - 1);
 
+if(parseInt(offset) != parseInt(jss.time_offset)) {
+	$.post(jss['url'] + 'account/timezone', { json: 1, time_offset: offset });
+	jss.time_offset = offset; // new detected time offset
+	var now = new Date(); //today
+	var now_t = now; // tommorow
+	now_t.setDate(now_t.getDate() + 1);
+	var now_y = now; // yesterday
+	now_y.setDate(now_t.getDate() - 1);
+	$('time').each(function(index) {
+		var date = new Date($(this).data('unix') * 1000);
+		// Detect time
 		var time = date.getHours() + ':' + date.getMinutes();
 		if(jss['time_24'] == 0) {
-			var hours = date.getHours() + 1;
-			if(hours > 12) {
+			var hours = date.getHours();
+			if(hours >= 12) {
 				time = (hours - 12) + ':' + ('0' + date.getMinutes()).slice(-2) + 'pm';
 			}
 			else {
+				hours = hours == 0 ? 12 : hours;
 				time = hours + ':' + ('0' + date.getMinutes()).slice(-2) + 'am';
 			}
 		}
-
+		// Relative date formats
 		if(now.getFullYear() == date.getFullYear() && now.getMonth() == date.getMonth() && now.getDate() == date.getDate()) {
-			new_date = jss['today'].replace('{time}', time);
+			$(this).html(jss['today'].replace('{time}', time));
 		}
 		else if(now_y.getFullYear() == date.getFullYear() && now_y.getMonth() == date.getMonth() && now_y.getDate() == date.getDate()) {
-			new_date = jss['yesterday'].replace('{time}', time);
+			$(this).html(jss['yesterday'].replace('{time}', time));
 		}
 		else if(now_t.getFullYear() == date.getFullYear() && now_t.getMonth() == date.getMonth() && now_t.getDate() == date.getDate()) {
-			new_date = jss['tommorow'].replace('{time}', time);
+			$(this).html(jss['tommorow'].replace('{time}', time));
 		}
+		// Standard date format
 		else {
-			new_date = date.getFullYear() + '-' + ('0' + date.getMonth()).slice(-2) + '-' + ('0' + date.getDate()).slice(-2) + ' ' + time;
+			$(this).html(date.getFullYear() + '-' + ('0' + date.getMonth()).slice(-2) + '-' + ('0' + date.getDate()).slice(-2) + ' ' + time);
 		}
-
-		$(this).html(new_date);
 	});
 }
 

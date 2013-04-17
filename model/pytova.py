@@ -72,8 +72,7 @@ class Pytova(tornado.web.RequestHandler):
 		# Check for valid session
 		self.session_id = self.get_cookie('session_id')
 		if (self.session_id in sessions and
-				(self.reque
-st.remote_ip != sessions[self.session_id]['remote_ip'] or
+				(self.request.remote_ip != sessions[self.session_id]['remote_ip'] or
 				self.request.headers.get('User-Agent', '') != sessions[self.session_id]['user_agent'] or
 				datetime.now() - timedelta(minutes=int(15)) > sessions[self.session_id]['updated'])):
 			self.session_id = None
