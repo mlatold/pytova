@@ -13,7 +13,7 @@
 	<!-- IE not supported!! -->
 	<!--[if lt IE9]><script>alert('IE NOT SUPPORTED');window.location='https://www.firefox.com';</script><![endif]-->
 </head>
-<header id="head">
+<header id="header">
 	{% include header.html %}
 </header>
 <section id="content">
@@ -21,5 +21,6 @@
 </section>
 <script>var js={{js}},jss={{js_static}};</script>
 <script src="{{url()}}static/js/jquery.js"></script>
-<script src="{{url()}}static/js/init.js"></script>
+<script src="{{url()}}static/js/init.js"></script>{% for jsf in js_files %}
+<script src="{% if jsf[:1] == '/' %}{{url('static/js').rstrip('/')}}{{jsf}}{% else %}{{jsf}}{% end %}"></script>{% end %}
 <!-- {{render}} -->

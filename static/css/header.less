@@ -1,4 +1,4 @@
-header#head {
+#header {
 
 	nav {
 		.box-shadow(0px, 5px, 30px);
@@ -9,6 +9,11 @@ header#head {
 	ul {
 		width: @site-width-highres;
 		margin: 0 auto;
+
+		li {
+			line-height: 25px;
+			display: inline-block;
+		}
 
 		li a {
 			display: block;
@@ -22,13 +27,9 @@ header#head {
 			overflow: hidden;
 		}
 
-		li {
-			line-height: 25px;
-			display: inline-block;
-		}
-
-		// TODO: Fix this guy so it hides in overflow: auto (probably the fault of pos absolute with zindex 1)
+		// Active arrow
 		li.on a:after {
+			.rotate(45deg);
 			display: block;
 			width: 6px;
 			height: 6px;
@@ -40,9 +41,9 @@ header#head {
 			content: '';
 			position: absolute;
 			float: left;
-			.rotate(45deg);
 		}
 
+		// Account link
 		li:first-child {
 			float: right;
 
@@ -55,7 +56,7 @@ header#head {
 				float: left;
 				height: 20px;
 				display: inline-block;
-				margin: 2px 10px 0 10px;
+				margin: 2px 10px 0 0;
 			}
 		}
 
@@ -93,12 +94,31 @@ header#head {
 	@media (max-width: @tablet) {
 		ul {
 			width: @site-width-tablet;
+
+			// Compress navigation
+			li#site a {
+				padding: 0 5px 0 0;
+			}
+
+			li a {
+				width: auto;
+				padding: 0 5px 0 0;
+			}
+
+			li:first-child a {
+				padding: 0;
+			}
 		}
 	}
 
 	@media (max-width: @mobile) {
 		ul {
 			width: @site-width-phone;
+
+			// Hide arrow (not enough space)
+			li.on a:after {
+				display: none;
+			}
 		}
 	}
 }

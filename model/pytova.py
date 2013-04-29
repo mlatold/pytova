@@ -10,6 +10,7 @@ import time
 from datetime import datetime, timedelta, date
 
 import tornado.template
+import tornado.escape
 import tornado.web
 
 from library import cache
@@ -48,8 +49,9 @@ class Pytova(tornado.web.RequestHandler):
 	uri = ()
 
 	js_static = {}
-	js_files = {}
 	js = {}
+
+	lol = 0
 
 	__baseurl = cache.get('configuration', 'url').strip('/') + '/'
 	__timer = None
@@ -112,8 +114,10 @@ class Pytova(tornado.web.RequestHandler):
 
 		# Initalize navigation (breadcrumbs, mainly)
 		self.navigation = [("Pytova", self.__baseurl)]
+		self._js_files = []
 
 	def post(self):
+		"""Redirect post requests to be get requests"""
 		self.get()
 
 	def get(self, methodlist={}):
@@ -148,7 +152,8 @@ class Pytova(tornado.web.RequestHandler):
 				year=date.today().year,
 				on={self.uri[1]:' class="on"'},
 				js=json.dumps(self.js, separators=(',', ':')),
-				js_static=json.dumps(self.js_static, separators=(',', ':')),
+				js_files=self._js_files,
+				js_static=tornado.escape.json_encode(self.js_static),
 				render=self.word('render', 'debug', time=time.time() - self.__timer),
 				navigation=self.navigation
 			))

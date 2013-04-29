@@ -15,4 +15,4 @@ class ControlForum(Pytova):
 		'<br />right now: ' + self.date(datetime.now()) +
 		'<br />1 day ago: ' + self.date(datetime.now() - timedelta(days=1)) +
 		'<br />5 days ago: ' + self.date(datetime.now() - timedelta(days=5)) +
-		 '<br /><br />this is content on a page thanks for stopping by!<br /><br />' + repr(self.request))
+		'<br /><br />this is content on a page thanks for stopping by!<br /><br />' + repr(self.request))

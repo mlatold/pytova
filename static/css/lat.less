@@ -31,7 +31,7 @@
 @site-width-highres: 86%;
 @site-width-desktop: 92%;
 @site-width-tablet: 95%;
-@site-width-phone: 98%;
+@site-width-phone: 97%;
 
 @desktop: 1400px;
 @tablet: 800px;
@@ -66,14 +66,17 @@
 }
 
 .rotate (@d) {
-	-webkit-transform:rotate(@d);
-	-moz-transform:rotate(@d);
-	-o-transform:rotate(@d);
-	-ms-transform:rotate(@d);
+	rotation: @d;
+	transform: rotate(@d);
+	-webkit-transform: rotate(@d);
+	-moz-transform: rotate(@d);
+	-o-transform: rotate(@d);
+	-ms-transform: rotate(@d);
 }
 
 /* Imports */
 @import url('reset.less');
 @import url('base.less');
 @import url('header.less');
+@import url('persona.less');
 @import url('content.less');

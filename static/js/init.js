@@ -66,7 +66,7 @@ function init(context) {
 
 	//$('iframe[src="about:blank"]').remove(); // removes recaptcha iframes
 
-	$('a[rel!=external][href^="'+jss['url']+'"]', context).on('click', function(e){
+	$('a[rel!=external][href^="'+jss['url']+'"]', context):not('[href$="#"]').on('click', function(e){
 		if (typeof window.history.pushState == 'function' && e.button == 0) {
 			history.pushState({}, document.title, $(this).attr('href'));
 			get_page($(this).attr('href'));
