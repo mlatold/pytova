@@ -1,7 +1,6 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-title="Pytova">
 <!-- Powered by Pytova - Copyright {{year}} Michael Lat -->
-
 <head>
 	<title>Pytova{% if len(navigation) > 1 %} :: {{navigation[-1][1]}}{% end %}</title>
 	<meta charset="utf-8">
@@ -20,7 +19,7 @@
 	{{content}}
 </section>
 <script>var js={{js}},jss={{js_static}};</script>
-<script src="{{url()}}static/js/jquery.js"></script>
-<script src="{{url()}}static/js/init.js"></script>{% for jsf in js_files %}
-<script src="{% if jsf[:1] == '/' %}{{url('static/js').rstrip('/')}}{{jsf}}{% else %}{{jsf}}{% end %}"></script>{% end %}
+<script src="{{url('static/js')}}jquery.js"></script>
+<script src="{{url('static/js')}}init.js"></script>{% for jsf in js_files %}
+<script src="{{jsf}}"></script>{% end %}
 <!-- {{render}} -->

@@ -1,7 +1,7 @@
 <section>
 	<nav>
 		<ul>
-			<li{{on.get('account','')}}><a href="{{url('account')}}"><img src="{{url('static/img')}}squares.png" class="avatar" alt="" />{{word('sign_in')}}</a></li>
+			<li{{on.get('auth','')}}><a href="{{url('auth')}}"><img src="{{url('static/img')}}squares.png" class="avatar" alt="" />{{word('sign_in')}}</a></li>
 			<li id="site"><a href="{{url()}}">Pytova</a></li>
 			<li{{on.get('forum','')}} data-default><a href="{{url()}}">{{word('forums')}}</a></li>
 			<li{{on.get('member','')}}><a href="{{url('member')}}">{{word('members')}}</a></li>

@@ -1,6 +1,6 @@
 var js = { loaded: 0, count: 0, code: [], data_buffer: null };
 $.ajaxSetup({cache: false});
-init();
+var current_url = window.location.href;
 var offset = new Date().getTimezoneOffset() * -1;
 
 if(parseInt(offset) != parseInt(jss.time_offset)) {
@@ -48,6 +48,8 @@ window.setTimeout(function() {
 	});
 }, 200);
 
+init();
+
 /**
  * Initalizes loaded page
  *
@@ -58,52 +60,43 @@ window.setTimeout(function() {
 function init(context) {
 	if(typeof context == 'undefined') context = null;
 
-	//history.replaceState({}, document.title, jss['current_url']);
-
+	// still loading JS!
+	/*
 	if(js['count'] != js['loaded']) {
 		return false;
+	}*/
+	$('iframe').remove(); // removes iframes on navigation
+
+	if(context == null || context == '#header') {
+		$('#header a').click(function() {
+			$('#header li').removeClass('on');
+			if($(this).parent().attr('id') == "site") {
+				$('#header li[data-default]').addClass('on');
+			}
+			else {
+				$(this).parent().addClass('on');
+			}
+		});
 	}
 
-	//$('iframe[src="about:blank"]').remove(); // removes recaptcha iframes
-
-	$('a[rel!=external][href^="'+jss['url']+'"]', context):not('[href$="#"]').on('click', function(e){
+	$("a[rel!=external][href^='"+jss['url']+"']", context).not("[href$=#]").on('click', function(e){
 		if (typeof window.history.pushState == 'function' && e.button == 0) {
-			history.pushState({}, document.title, $(this).attr('href'));
+			history.pushState({}, $('html').data('title'), $(this).attr('href'));
+			jss['current_url']
 			get_page($(this).attr('href'));
 			return false;
 		}
 		return true;
 	});
-
+/*
 	$('.close').on('click', function() {
 		$(this).off('click');
 		$(this).parent().slideUp('fast', function() {
 			$(this).remove();
 		});
 	});
-
+*/
 	return true;
-}
-
-function ajax_loading(act) {
-	// Toggle
-	if(typeof act == undefined) {
-		if(obj.loading.is(':visible')) {
-			act = 'hide';
-		} else {
-			act = 'show';
-		}
-	}
-
-	// Close
-	if(act == 'hide') {
-		obj.loading.fadeOut('fast', function(){
-			clearInterval($("#loading").data('interval'));
-		});
-	}
-	// Open
-	else if (act == 'show') {
-	}
 }
 
 /**
@@ -128,10 +121,10 @@ function get_page(url) {
 		$.ajax({
 			type: 'POST',
 			url: url,
-			data: { json: 1 },
+			data: { fmt: 'json' },
 			success: load_page,
 			error: function(jqXHR, textStatus, errorThrown) {
-				jss['current_url'] = url;
+				//jss['current_url'] = url;
 				load_page({ content: jqXHR.responseText });
 				console.log(jqXHR, textStatus, errorThrown);
 			},
@@ -151,11 +144,14 @@ function get_page(url) {
 function load_page(data, textStatus, jqXHR) {
 	// refresh variable array
 	js = data['js'];
+	if(typeof data['nav'] == 'undefined') data['nav'] = [];
+	document.title = $('html').data('title') + (data['nav'].length ? " :: " + data['nav'][data['nav'].length-1][1] : "");
+	history.replaceState({}, document.title, typeof data['url'] != 'undefined' ? data['url'] : window.location.href);
 
-	if(data['header']) {
-		$('header *').off();
-		$('header').html(data['header']);
-		init($('header'));
+	if(typeof data['header'] != 'undefined') {
+		$('#header *').off();
+		$('#header').html(data['header']);
+		init('#header');
 	}
 
 	// load content onto the page
@@ -174,16 +170,9 @@ function load_page(data, textStatus, jqXHR) {
 
 		// loads the new javascript files
 		$.each(data['jsf'], function(i, v) {
-			$.ajax({
-				url: v,
-				dataType: "script",
-				success: function() {
-					js['loaded'] = js['loaded'] + 1;
-					init('#content');
-				},
-				error: function(jqXHR, textStatus, errorThrown) {
-					console.log(errorThrown);
-				}
+			$.getScript(v, function() {
+				js['loaded'] = js['loaded'] + 1;
+				init('#content');
 			});
 		});
 	} else {
