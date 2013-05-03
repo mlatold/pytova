@@ -42,7 +42,6 @@ class Pytova(tornado.web.RequestHandler):
 	language = "en"
 	output = ""
 	uri = ()
-
 	js_static = {}
 	js = {}
 
@@ -178,6 +177,7 @@ class Pytova(tornado.web.RequestHandler):
 					output=False,
 					on={self.uri[1]:' class="on"'}
 				)
+			out_dict['debug'] = self.word('render', 'debug', time=time.time() - self.__timer)
 			out_dict.update({
 				'js': self.js,
 				'jsf': self._js_files,

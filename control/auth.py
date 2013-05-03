@@ -1,4 +1,5 @@
 from model.pytova import Pytova
+from model.member import Member
 
 import urllib.parse
 import tornado.web
@@ -11,14 +12,20 @@ class ControlAuth(Pytova):
 		self.navigation.append(("/auth", self.word('sign_in')))
 		super().get({
 			'': self.index,
-			'persona': self.persona
+			'persona': self.persona,
+			'new': self.new
 		})
 
 	def index(self):
 		"""Sign in page"""
 		self._js_files.extend(['https://browserid.org/include.js', '/auth.js'])
 		self.js['persona_error'] = self.word('persona_error', 'auth')
+		print(repr(Member(member_id=2).exists()))
 		self.view("auth/login")
+
+	def new():
+		"""Sign up page"""
+		return
 
 	@tornado.web.asynchronous
 	def persona(self):

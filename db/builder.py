@@ -50,7 +50,6 @@ class Builder:
 		"""Builds the query from a dict into an sql query and data set"""
 		data = []
 		query = ''
-		querytype = ''
 
 		'''
 				if 'join' in sql:  # JOIN
@@ -63,8 +62,6 @@ class Builder:
 						setq = setq + [key + '=' + Builder.sanitize(s, data)]
 					query += ' SET ' + ', '.join(setq)
 
-				if 'where' in sql:  # WHERE
-					query += ' WHERE ' + Builder.where(sql['where'], data)
 
 				#if 'group' in sql:  # GROUP BY
 				#	query += ' GROUP BY ' + ', '.join(sql['group'])
@@ -85,6 +82,9 @@ class Builder:
 		if 'select' in sql:
 			query = 'SELECT ' + sql['select'] + ' FROM' + Builder.table(sql['join'])
 
+		if 'where' in sql:
+			query += ' WHERE ' + Builder.conditional(sql['where'], data)
+
 		'''
 				query = {
 					'select': 'SELECT'
@@ -97,28 +97,24 @@ class Builder:
 		return [query, data]
 
 	@staticmethod
-	def where(where, data, brackets=False):
+	def conditional(clause, data):
 		"""Parses where brackets and clauses"""
-		where_string = ''
-
-		for key, val in where.items():
-			if isinstance(val, dict):
-				Builder.parse_where(val, data, True)
+		output = ""
+		for k, v in clause.items():
+			if output != "":
+				if k[:3].lower() == 'or ':
+					output += ' OR ' + k[3:]
+				elif k[:4].lower() == 'and ':
+					output += ' AND ' + k[4:]
+				else:
+					output += ' AND ' + k
 			else:
-				if where_string != '':
-					if key[:3] == 'OR ':
-						where_string += ' OR '
-					else:
-						where_string += ' AND '
-				where_string += key
-
-				if key[-1:].isalpha():
-					where_string += '='
-
-				where_string += '?'
-				data += [val]
-
-		if brackets:
-			return '(' + where_string + ')'
-		else:
-			return where_string
+				output += k
+			if isinstance(v, dict):
+				output = "(" + Builder.where(v, data) + ")"
+			else:
+				if k[-1:].strip().isalpha():
+					output += '='
+				output += '?'
+				data.append(v)
+		return output

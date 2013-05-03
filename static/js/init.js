@@ -144,6 +144,7 @@ function get_page(url) {
 function load_page(data, textStatus, jqXHR) {
 	// refresh variable array
 	js = data['js'];
+	if(typeof data['debug'] != 'undefined') console.log(data['debug'])
 	if(typeof data['nav'] == 'undefined') data['nav'] = [];
 	document.title = $('html').data('title') + (data['nav'].length ? " :: " + data['nav'][data['nav'].length-1][1] : "");
 	history.replaceState({}, document.title, typeof data['url'] != 'undefined' ? data['url'] : window.location.href);
