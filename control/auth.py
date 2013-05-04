@@ -5,26 +5,25 @@ import urllib.parse
 import tornado.web
 import tornado.escape
 
-PERSONA_URL = 'https://browserid.org/verify'
+PERSONA_URL = 'https://verifier.login.persona.org/verify'
 
 class ControlAuth(Pytova):
 	def get(self):
 		self.navigation.append(("/auth", self.word('sign_in')))
 		super().get({
-			'': self.index,
+			#'': self.index,
+			'sign_out': self.sign_out,
 			'persona': self.persona,
 			'new': self.new
 		})
 
-	def index(self):
-		"""Sign in page"""
-		self._js_files.extend(['https://browserid.org/include.js', '/auth.js'])
-		self.js['persona_error'] = self.word('persona_error', 'auth')
-		print(repr(Member(member_id=2).exists()))
-		self.view("auth/login")
+	def sign_out(self):
+		"""Process log out"""
+		pass
 
 	def new():
 		"""Sign up page"""
+		self.view("account/sign_up")
 		return
 
 	@tornado.web.asynchronous
@@ -45,11 +44,16 @@ class ControlAuth(Pytova):
 	def persona_response(self, response):
 		"""Parse persona response"""
 		struct = tornado.escape.json_decode(response.body)
-		if struct['status'] == 'okay' and struct['audience'] == self.url() or self.sign_in(email=struct['email']):
-			self.redirect('/', success=True, header=True, fmt='json')
+		if struct['status'] == 'okay' and struct['audience'] == self.url():
+			self.sign_in(email=struct['email'])
 		else:
 			self.write({'success': False})
 			self.finish()
 
-	def sign_in(self, email=""):
-		return False
+	def sign_in(self, email):
+		user = Member({'member_email LIKE': email})
+		if user.exists:
+			self.session()['member'] = user
+			self.redirect('/', success=True, header=True, fmt='json')
+		else:
+			self.redirect('/auth/new', success=True, fmt='json')

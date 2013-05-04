@@ -52,30 +52,48 @@ init();
 
 /**
  * Initalizes loaded page
- *
- * @param context
- * @returns {Boolean}
  */
 
 function init(context) {
 	if(typeof context == 'undefined') context = null;
 
 	// still loading JS!
-	/*
 	if(js['count'] != js['loaded']) {
 		return false;
-	}*/
-	$('iframe').remove(); // removes iframes on navigation
+	}
+
+	$("iframe").remove(); // removes iframes created by plugins
 
 	if(context == null || context == '#header') {
-		$('#header a').click(function() {
-			$('#header li').removeClass('on');
+		$("#header a:not([href$=#])").click(function() {
+			$("#header li").removeClass('on');
 			if($(this).parent().attr('id') == "site") {
-				$('#header li[data-default]').addClass('on');
+				$("#header li[data-default]").addClass('on');
 			}
 			else {
 				$(this).parent().addClass('on');
 			}
+		});
+
+		$("#sign_in a[href$=#]").click(function(){
+			navigator.id.get(function(assertion){
+				if (assertion !== null) {
+					$.post(jss['url'] + 'auth/persona', { assertion: assertion },
+						function(data) {
+							if(data['success'] == true) {
+								load_page(data);
+							}
+							else {
+								alert(data['error']);
+							}
+						}, "json"
+					);
+				}
+				else {
+					window.location = jss['url'] + 'auth/sign_out'
+				}
+			});
+			return false;
 		});
 	}
 

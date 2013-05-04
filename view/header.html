@@ -1,7 +1,7 @@
 <section>
 	<nav>
 		<ul>
-			<li{{on.get('auth','')}}><a href="{{url('auth')}}"><img src="{{url('static/img')}}squares.png" class="avatar" alt="" />{{word('sign_in')}}</a></li>
+			<li{{on.get('account','')}} id="sign_in"{% if member.exists %} data-signed-in{% end %}><a href="{% if member.exists %}{{url('account')}}{% else %}#{% end %}"><img src="{{url('static/img')}}squares.png" class="avatar" alt="" />{% if member.exists %}{{member.member_email}}{% else %}{{word('sign_in')}}{% end %}</a></li>
 			<li id="site"><a href="{{url()}}">Pytova</a></li>
 			<li{{on.get('forum','')}} data-default><a href="{{url()}}">{{word('forums')}}</a></li>
 			<li{{on.get('member','')}}><a href="{{url('member')}}">{{word('members')}}</a></li>

@@ -18,6 +18,8 @@ from db.query import ini
 import time
 import http.client
 
+from model.member import Member
+
 cache.add('configuration', select='name, value')
 
 # Lanuage Config
@@ -42,6 +44,7 @@ class Pytova(tornado.web.RequestHandler):
 	language = "en"
 	output = ""
 	uri = ()
+
 	js_static = {}
 	js = {}
 
@@ -94,6 +97,7 @@ class Pytova(tornado.web.RequestHandler):
 		sessions.setdefault(self.session_id, {
 			'new': True,
 			'spider': spider,
+			'member': Member(),
 			'spider_url': spider_url,
 			'remote_ip': self.request.remote_ip,
 			'user_agent': self.request.headers.get('User-Agent', ''),
@@ -142,8 +146,8 @@ class Pytova(tornado.web.RequestHandler):
 			self.js_static['yesterday'] = self.word("yesterday", raw=True)
 			self.js_static['tommorow'] = self.word("tommorow", raw=True)
 			self.js_static['today'] = self.word("today", raw=True)
-			self.js_static['time_24'] = self.user('time_24')
-			self.js_static['time_offset'] = self.user('time_offset')
+			self.js_static['time_24'] = self.setting('time_24')
+			self.js_static['time_offset'] = self.setting('time_offset')
 			self.js_static['url'] = self.__baseurl
 
 			self.write(self.view('wrapper',
@@ -190,10 +194,10 @@ class Pytova(tornado.web.RequestHandler):
 		"""Returns formatted HTML date tag"""
 		if type(unix) is datetime:
 			unix = time.mktime(unix.timetuple())
-		day = datetime.utcfromtimestamp(unix) + timedelta(minutes=self.user('time_offset'))
+		day = datetime.utcfromtimestamp(unix) + timedelta(minutes=self.setting('time_offset'))
 
 		# 24 hour formatting
-		if self.user('time_24'):
+		if self.setting('time_24'):
 			clock = day.strftime("%H:%M").lstrip('0')
 		else:
 			clock = day.strftime("%I:%M%p").lstrip('0').lower()
@@ -209,16 +213,22 @@ class Pytova(tornado.web.RequestHandler):
 			out = day.strftime("%Y-%m-%d " + clock)
 		return  '<time datetime="' + datetime.utcfromtimestamp(unix).strftime("%Y-%m-%d %H:%M") + 'Z" data-unix="' + str(int(unix)) + '">' + out + '</time>'
 
-	def session(self, name, session_id=None, fallback=None):
+	def member(self, session_id=None, fallback=None):
+		"""Returns member variable"""
+		return self.session(session_id, fallback)['member']
+
+	def session(self, session_id=None, fallback=None):
 		"""Returns session contextual setting"""
 		global sessions
 		if session_id == None:
 			session_id = self.session_id
-		return sessions[session_id].get(name, fallback)
+		return sessions.get(session_id, fallback)
 
-	def user(self, name, value=None, fallback=None):
+	def setting(self, name, value=None, session_id=None, fallback=None):
 		"""Returns user contextual setting"""
 		global sessions
+		if session_id == None:
+			session_id = self.session_id
 		if value != None:
 			sessions[self.session_id]['settings'][name] = value
 		return sessions[self.session_id]['settings'].get(name, fallback)
@@ -236,7 +246,7 @@ class Pytova(tornado.web.RequestHandler):
 	def view(self, file, output=True, **args):
 		"""Loads template using Tornados Template Engine"""
 		global template_loader
-		out = template_loader.load(file + ".html").generate(url=self.url, word=self.word, date=self.date, escape=html.escape, **args).decode("utf-8")
+		out = template_loader.load(file + ".html").generate(url=self.url, word=self.word, date=self.date, member=self.member(), escape=html.escape, **args).decode("utf-8")
 		if output == True:
 			self.output += out
 		return out

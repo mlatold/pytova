@@ -101,19 +101,14 @@ class Builder:
 		"""Parses where brackets and clauses"""
 		output = ""
 		for k, v in clause.items():
-			if output != "":
-				if k[:3].lower() == 'or ':
-					output += ' OR ' + k[3:]
-				elif k[:4].lower() == 'and ':
-					output += ' AND ' + k[4:]
-				else:
-					output += ' AND ' + k
+			if output != "" and k[:3].lower() != 'or ' and k[:4].lower() != 'and ':
+				output += ' AND ' + k
 			else:
-				output += k
+				output += k + ' '
 			if isinstance(v, dict):
 				output = "(" + Builder.where(v, data) + ")"
 			else:
-				if k[-1:].strip().isalpha():
+				if k[-5:].lower() != ' like' and k.strip()[-1:].isalpha():
 					output += '='
 				output += '?'
 				data.append(v)

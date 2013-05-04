@@ -54,7 +54,7 @@ class Driver(Builder):
 		if self.obj == None:
 			driver = self.connect()
 			csr = driver.cursor()
-			#print(self.query)
+			print(self.query)
 			#start_time = time.time()
 			csr.execute(self.query, self.data)
 			self.obj = csr
@@ -75,9 +75,9 @@ class Driver(Builder):
 		self.close(doclose)
 		return result
 
-	def num(self, doclose=True):
+	def num(self, doclose=False):
 		"""Returns number of rows"""
-		result = self.execute(False).rowcount()
+		result = self.execute(False).rowcount
 		self.close(doclose)
 		return result
 
