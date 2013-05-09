@@ -11,23 +11,25 @@
 		margin: 0 auto;
 
 		li {
-			line-height: 25px;
+			line-height: 30px;
 			display: inline-block;
+			position: relative;
 		}
 
 		li a {
-			display: block;
-			width: 80px;
+			//display: block;
+			//width: 80px;
 			text-align: center;
 			color: #999;
-			font-size: 12px;
 			font-family: Lucida Sans Unicode, Lucida Grande, sans-serif;
 			text-decoration: none;
 			white-space: nowrap;
 			overflow: hidden;
+			padding: 0 10px;
 		}
 
 		// Active arrow
+
 		li.on a:after {
 			.rotate(45deg);
 			display: block;
@@ -36,12 +38,13 @@
 			background: #2d2d2d;
 			border-bottom: 1px solid #999;
 			border-right: 1px solid #999;
-			margin: -3px 0 0 37px;
+			margin: -3px 0 0 42%;
 			z-index: 1;
 			content: '';
 			position: absolute;
 			float: left;
 		}
+
 
 		// Account link
 		li:first-child {
@@ -50,13 +53,15 @@
 			a {
 				width: auto;
 				color: @c1-3;
+				padding: 0;
 			}
 
 			.avatar {
-				float: left;
+				float: right;
 				height: 20px;
-				display: inline-block;
-				margin: 2px 10px 0 0;
+				max-width: 25px;
+				margin: 6px 0 0 8px;
+				//vertical-align: middle;
 			}
 		}
 
@@ -71,7 +76,7 @@
 		li#site a {
 			text-align: left;
 			width: auto;
-			padding: 0 20px 0 0;
+			padding: 0 10px 0 0;
 			color: @c2-3;
 
 			&:hover {
@@ -101,8 +106,7 @@
 			}
 
 			li a {
-				width: auto;
-				padding: 0 5px 0 0;
+				padding: 0 5px;
 			}
 
 			li:first-child a {

@@ -1,5 +1,6 @@
 from model.pytova import Pytova
 from model.member import Member
+from model.form import Form
 
 import urllib.parse
 import tornado.web
@@ -9,7 +10,7 @@ PERSONA_URL = 'https://verifier.login.persona.org/verify'
 
 class ControlAuth(Pytova):
 	def get(self):
-		self.navigation.append(("/auth", self.word('sign_in')))
+		self.breadcrumb(self.word('sign_in'), "/auth")
 		super().get({
 			#'': self.index,
 			'sign_out': self.sign_out,
@@ -19,12 +20,16 @@ class ControlAuth(Pytova):
 
 	def sign_out(self):
 		"""Process log out"""
-		pass
+		self.redirect('/', fmt='html')
 
-	def new():
+	def new(self, email=''):
 		"""Sign up page"""
-		self.view("account/sign_up")
-		return
+		form = Form("Sign Up")
+
+		if self.request.method == 'POST':
+			print('post')
+
+		self.view("account/sign_up", email=tornado.escape.url_unescape(email))
 
 	@tornado.web.asynchronous
 	def persona(self):
@@ -41,7 +46,7 @@ class ControlAuth(Pytova):
 		)
 		return False
 
-	def persona_response(self, response):
+	def persona_response(self, response=None):
 		"""Parse persona response"""
 		struct = tornado.escape.json_decode(response.body)
 		if struct['status'] == 'okay' and struct['audience'] == self.url():
@@ -51,9 +56,9 @@ class ControlAuth(Pytova):
 			self.finish()
 
 	def sign_in(self, email):
-		user = Member({'member_email LIKE': email})
+		user = Member({ 'member_email LIKE': email })
 		if user.exists:
 			self.session()['member'] = user
 			self.redirect('/', success=True, header=True, fmt='json')
 		else:
-			self.redirect('/auth/new', success=True, fmt='json')
+			self.redirect('/auth/new/' + tornado.escape.url_escape(email), success=True, fmt='json')

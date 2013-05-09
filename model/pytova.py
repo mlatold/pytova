@@ -113,8 +113,11 @@ class Pytova(tornado.web.RequestHandler):
 		self.uri = tuple(uri.split('/'))
 
 		# Initalize navigation (breadcrumbs, mainly)
-		self.navigation = [("Pytova", self.__baseurl)]
+		self._breadcrumbs = [("Pytova", self.__baseurl)]
 		self._js_files = []
+
+	def breadcrumb(self, name, url):
+		self._breadcrumbs.append((name, url))
 
 	def post(self):
 		"""Redirect post requests to be get requests"""
@@ -159,7 +162,7 @@ class Pytova(tornado.web.RequestHandler):
 				js_files=self._js_files,
 				js_static=tornado.escape.json_encode(self.js_static),
 				render=self.word('render', 'debug', time=time.time() - self.__timer),
-				navigation=self.navigation
+				navigation=self._breadcrumbs
 			))
 		else:
 			# URL arguments passed by redirects used in json returns
@@ -186,7 +189,7 @@ class Pytova(tornado.web.RequestHandler):
 				'js': self.js,
 				'jsf': self._js_files,
 				'out': self.output,
-				'nav': self.navigation[1:]
+				'nav': self._breadcrumbs[1:]
 			})
 			self.write(out_dict)
 
@@ -238,9 +241,9 @@ class Pytova(tornado.web.RequestHandler):
 		if url[:1] == '/':
 			url = self.url(url)
 			args['redirect'] = True
-			if self.get_argument('fmt', default=None):
-				args['fmt'] = self.get_argument('fmt')
-			url += '?' + urllib.parse.urlencode(args)
+			args['fmt'] = self.get_argument('fmt', default=args.get('fmt', 'html'))
+			if args['fmt'] != 'html':
+				url += '?' + urllib.parse.urlencode(args)
 		super().redirect(url, permanent, status)
 
 	def view(self, file, output=True, **args):
@@ -272,7 +275,7 @@ class Pytova(tornado.web.RequestHandler):
 
 	def write_error(self, status_code=404, scope='global', **kwargs):
 		"""Global Error handler"""
-		self.navigation = [self.navigation[0], ("/", self.word('error'))]
+		self._breadcrumbs = [self._breadcrumbs[0], (self.word('error'), "/")]
 		if self.settings.get("debug") and "exc_info" in kwargs:
 			self.output = self.view('error', output=False, message='<br />'.join(traceback.format_exception(*kwargs["exc_info"])))
 		else:
