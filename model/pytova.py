@@ -1,34 +1,21 @@
-import os
 import re
 import time
-import html
 import uuid
 import inspect
 import traceback
-import configparser
+import http.client
 import urllib.parse
 from datetime import datetime, timedelta, date
 
-import tornado.template
 import tornado.escape
 import tornado.web
 
-from library import cache
+from library import cache, load
 from db.query import ini
-import time
-import http.client
-
 from model.member import Member
 
 cache.add('configuration', select='name, value')
-
-# Lanuage Config
-LANGUAGE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../lang"))
-language_loader = {}
 sessions = {}
-
-# Template Loader
-template_loader = tornado.template.Loader(os.path.join(os.path.dirname(__file__), "../view"), autoescape=None)
 
 class Pytova(tornado.web.RequestHandler):
 	"""Pytova Master Controller
@@ -53,19 +40,14 @@ class Pytova(tornado.web.RequestHandler):
 	__baseurl = cache.get('configuration', 'url').strip('/') + '/'
 
 	def __init__(self, application, request, **kwargs):
-		global sessions, template_loader, language_loader, LANGUAGE_PATH
+		global sessions
 		super().__init__(application, request, **kwargs)
 		spider_url = ""
 		spider = False
 
 		# Reload langs/templates if they're not populated, or if we're in debug mode
 		if self.settings.get("debug") or len(lng) == 0:
-			template_loader.reset()
-			language_loader = {}
-			for file in os.listdir(LANGUAGE_PATH):
-				if file.endswith('.ini'):
-					language_loader[file[:-4]] = configparser.ConfigParser()
-					language_loader[file[:-4]].read(os.path.join(LANGUAGE_PATH, file))
+			load.reload()
 		self.__timer = time.time()
 
 		# Check for valid session
@@ -129,31 +111,26 @@ class Pytova(tornado.web.RequestHandler):
 		if self.output == "":
 			method = methodlist.get(self.uri[2], self.write_error)
 			out = method(*self.uri[3:len(inspect.getfullargspec(method).args) + 2])
-
 		# Finished or output doesn't want us to flush buffer
 		if self._finished or out == False:
 			return
 		# Add any strings returned to our output
 		elif type(out) is str:
 			self.output += out
-
 		format = self.get_argument('fmt', default='html')
-
 		# Add absolute URLs to javascript files
 		for index, js_file in enumerate(self._js_files):
 			if js_file[:1] == '/':
 				self._js_files[index] = self.url('static/js').rstrip('/') + js_file
-
 		if format == 'html':
 			# Static javascript (always loaded on page)
 			self.js_static['yesterday'] = self.word("yesterday", raw=True)
 			self.js_static['tommorow'] = self.word("tommorow", raw=True)
 			self.js_static['today'] = self.word("today", raw=True)
-			self.js_static['time_24'] = self.setting('time_24')
-			self.js_static['time_offset'] = self.setting('time_offset')
+			self.js_static['time_24'] = self.session()['settings'].get('time_24')
+			self.js_static['time_offset'] = self.session()['settings'].get('time_offset')
 			self.js_static['url'] = self.__baseurl
-
-			self.write(self.view('wrapper',
+			self.write(self.template('wrapper',
 				output=False,
 				content=self.output,
 				year=date.today().year,
@@ -180,10 +157,7 @@ class Pytova(tornado.web.RequestHandler):
 				out_dict['url'] = self.url("/".join(self.uri))
 			# Page is requesting new version of the header
 			if out_dict.get('header') == True:
-				out_dict['header'] = self.view('header',
-					output=False,
-					on={self.uri[1]:' class="on"'}
-				)
+				out_dict['header'] = self.template('header', output=False, on={self.uri[1]:' class="on"'})
 			out_dict['debug'] = self.word('render', 'debug', time=time.time() - self.__timer)
 			out_dict.update({
 				'js': self.js,
@@ -197,14 +171,12 @@ class Pytova(tornado.web.RequestHandler):
 		"""Returns formatted HTML date tag"""
 		if type(unix) is datetime:
 			unix = time.mktime(unix.timetuple())
-		day = datetime.utcfromtimestamp(unix) + timedelta(minutes=self.setting('time_offset'))
-
+		day = datetime.utcfromtimestamp(unix) + timedelta(minutes=self.session()['settings'].get('time_offset'))
 		# 24 hour formatting
-		if self.setting('time_24'):
+		if self.session()['settings'].get('time_24'):
 			clock = day.strftime("%H:%M").lstrip('0')
 		else:
 			clock = day.strftime("%I:%M%p").lstrip('0').lower()
-
 		# Relative day format
 		if day.date() == datetime.today().date(): # Today
 			out = self.word("today", time=clock)
@@ -216,25 +188,12 @@ class Pytova(tornado.web.RequestHandler):
 			out = day.strftime("%Y-%m-%d " + clock)
 		return  '<time datetime="' + datetime.utcfromtimestamp(unix).strftime("%Y-%m-%d %H:%M") + 'Z" data-unix="' + str(int(unix)) + '">' + out + '</time>'
 
-	def member(self, session_id=None, fallback=None):
-		"""Returns member variable"""
-		return self.session(session_id, fallback)['member']
-
 	def session(self, session_id=None, fallback=None):
 		"""Returns session contextual setting"""
 		global sessions
 		if session_id == None:
 			session_id = self.session_id
 		return sessions.get(session_id, fallback)
-
-	def setting(self, name, value=None, session_id=None, fallback=None):
-		"""Returns user contextual setting"""
-		global sessions
-		if session_id == None:
-			session_id = self.session_id
-		if value != None:
-			sessions[self.session_id]['settings'][name] = value
-		return sessions[self.session_id]['settings'].get(name, fallback)
 
 	def redirect(self, url, permanent=False, status=None, **args):
 		"""Inserts base url when redirecting"""
@@ -246,26 +205,20 @@ class Pytova(tornado.web.RequestHandler):
 				url += '?' + urllib.parse.urlencode(args)
 		super().redirect(url, permanent, status)
 
-	def view(self, file, output=True, **args):
+	def template(self, template, output=True, **args):
 		"""Loads template using Tornados Template Engine"""
-		global template_loader
-		out = template_loader.load(file + ".html").generate(url=self.url, word=self.word, date=self.date, member=self.member(), escape=html.escape, **args).decode("utf-8")
+		out = load.template(template, url=self.url, word=self.word, date=self.date, member=self.session()['member'], **args)
 		if output == True:
 			self.output += out
 		return out
 
+	def word(self, word, scope='global', **dicts):
+		"""Returns a formatted word from the language file"""
+		return load.word(word, scope, language=self.language, **dicts)
+
 	def url(self, url=""):
 		"""Returns a formatted url"""
 		return (self.__baseurl + url.lstrip("/")).rstrip("/") + "/"
-
-	def word(self, word, scope='global', fallback='---', raw=False, **args):
-		"""Returns a formatted word from the language file"""
-		global language_loader
-		word = language_loader[self.language].get(scope, word, raw=True, fallback=fallback)
-		if raw:
-			return word
-		else:
-			return word.format(**args)
 
 	def set_extra_headers(self, path):
 		"""Set default headers"""
@@ -277,6 +230,6 @@ class Pytova(tornado.web.RequestHandler):
 		"""Global Error handler"""
 		self._breadcrumbs = [self._breadcrumbs[0], (self.word('error'), "/")]
 		if self.settings.get("debug") and "exc_info" in kwargs:
-			self.output = self.view('error', output=False, message='<br />'.join(traceback.format_exception(*kwargs["exc_info"])))
+			self.output = self.template('error', output=False, message='<br />'.join(traceback.format_exception(*kwargs["exc_info"])))
 		else:
-			self.output = self.view('error', output=False, message=self.word('error_' + str(status_code), scope, fallback=str(status_code) + ': ' + http.client.responses.get(status_code, '')))
+			self.output = self.template('error', output=False, message=self.word('error_' + str(status_code), scope, fallback=str(status_code) + ': ' + http.client.responses.get(status_code, '')))

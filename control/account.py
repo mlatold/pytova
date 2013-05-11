@@ -8,7 +8,7 @@ class ControlAccount(Pytova):
 		})
 
 	def index(self):
-		self.view("account/account")
+		self.template("account/account")
 
 	def timezone(self):
 		self.user('time_offset', int(self.get_argument('time_offset', default=None)))

@@ -1,18 +1,25 @@
 import tornado.escape
 import re
+from library import load
 
 class Form:
 	validation = {
 		'email': re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$'),
 		'password': re.compile(r'^(?=.*(\d|\W))')
 	}
+	messages = {
+		'email': 'Invalid Email Address',
+		'password': 'Invalid Email'
+	}
+	request = None
 	values = {}
 	field = {}
 	label = {}
-	hidden = []
-	request = None
+	form = ''
 
-	def __init__(self, name='form'):
+	def __init__(self, name='form', language='en'):
+		self.language = language
+		self.form = name
 		self.hidden = []
 
 	def input(self, name, input_type='text', default=None, value=None, extra='', **attributes):

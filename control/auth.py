@@ -25,11 +25,9 @@ class ControlAuth(Pytova):
 	def new(self, email=''):
 		"""Sign up page"""
 		form = Form("Sign Up")
-
 		if self.request.method == 'POST':
 			print('post')
-
-		self.view("account/sign_up", email=tornado.escape.url_unescape(email))
+		self.template("account/sign_up", email=self.session().get('persona_email'))
 
 	@tornado.web.asynchronous
 	def persona(self):
@@ -61,4 +59,5 @@ class ControlAuth(Pytova):
 			self.session()['member'] = user
 			self.redirect('/', success=True, header=True, fmt='json')
 		else:
-			self.redirect('/auth/new/' + tornado.escape.url_escape(email), success=True, fmt='json')
+			self.session()['persona_email'] = email
+			self.redirect('/auth/new/', success=True, fmt='json')

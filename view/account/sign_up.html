@@ -1,4 +1,7 @@
-<h2>Sign Up</h2>
+<h2>{{word('new_account', 'auth')}}</h2>
 <section>
-	<p><h4>{{email}}</h4></p>
+	<p>{{word('new_account_message', 'auth', email=escape(email))}}</p>
+	<footer>
+		<button type="submit">Submit</button>
+	</footer>
 </section>

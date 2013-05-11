@@ -28,6 +28,10 @@ for file in os.listdir(os.path.abspath(os.path.join(os.path.dirname(__file__), "
 	if file.endswith('.py') and file != '__init__.py':
 		routes.append((r"/" + file[:-3] + ".*", getattr(sys.modules['control.' + file[:-3]], "Control" + file[:-3].title())))
 
+
+# Shortcut routes
+routes.append((r"/f.*", forum.ControlForum))
+
 webserver = tornado.web.Application(routes + [
 	(r'/static/([a-zA-Z0-9_\./]*)', StaticHandler, {'path': './static/'}), # Static assets
 	(r'/', forum.ControlForum), # Default page
